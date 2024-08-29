@@ -1,5 +1,5 @@
-debug/
-target/
+/target
+/debug
 
 Cargo.lock
 
@@ -7,4 +7,5 @@ Cargo.lock
 
 *.pdb
 
+# RustRover
 .idea
