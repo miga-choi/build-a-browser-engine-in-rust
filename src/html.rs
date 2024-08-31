@@ -1,4 +1,5 @@
 use crate::dom;
+use std::collections::HashMap;
 
 /*
     HTML has its own unique parsing algorithm. Unlike parsers from most programming
@@ -163,7 +164,7 @@ impl Parser {
         self.expect(">");
 
         // Contents.
-        let children = self.parse_node();
+        let children = self.parse_nodes();
 
         // Closing tag.
         self.expect("</");
@@ -171,5 +172,44 @@ impl Parser {
         self.expect(">");
 
         dom::elem(tag_name, attrs, children)
+    }
+
+
+    /*
+        Parsing attributes is pretty easy in our simplified syntax. Until we reach the
+        end of the opening tag (>) we repeatedly look for a name followed by = and then
+        a string enclosed in quotes.
+     */
+
+    // Parse a single name="value" pair.
+    fn parse_attr(&mut self) -> (String, String) {
+        let name = self.parse_name();
+        self.expect("=");
+        let value = self.parse_attr_value();
+        (name, value)
+    }
+
+    // Parse a quoted value
+    fn parse_attr_value(&mut self) -> String {
+        let open_quote = self.consume_char();
+        assert!(open_quote == '""' || open_quote == '\'');
+        let value = self.consume_while(|c| c != open_quote);
+        let close_quote = self.consume_char();
+        assert_eq!(open_quote, close_quote);
+        value
+    }
+
+    // Parse a list of name="value" pairs, seperated by whitespace.
+    fn parse_attributes(&mut self) -> dom::AttrMap {
+        let mut attributes = HashMap::new();
+        loop {
+            self.consume_whitespace();
+            if self.next_char() == '>' {
+                break;
+            }
+            let (name, value) = self.parse_attr();
+            attributes.insert(name, value);
+        }
+        attributes
     }
 }
