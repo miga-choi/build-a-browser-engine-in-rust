@@ -212,4 +212,43 @@ impl Parser {
         }
         attributes
     }
+
+
+    /*
+        To parse the child nodes, we recursively call "parse_node" in a loop until
+        we reach the closing tag. This function returns a Vec, which is Rust's name
+        for a growable array.
+     */
+
+    // Parse a sequence of sibling nodes.
+    fn parse_nodes(&mut self) -> Vec<dom::Node> {
+        let mut nodes = Vec::new();
+        loop {
+            self.consume_whitespace();
+            if self.eof() || self.starts_with("</") {
+                break;
+            }
+            nodes.push(self.parse_node());
+        }
+        nodes
+    }
+
+
+    /*
+        Finally, we can put this all together to parse an entire HTML document into
+        a DOM tree. This function will create a root node for the document if it
+        doesn't include one explicitly; this is similar to what a real HTML parser does.
+     */
+
+    // Parse an HTML document and return the root element.
+    pub fn parse(source: String) -> dom::Node {
+        let mut nodes = Parser { pos: 0, input: source }.parse_nodes();
+
+        // If the document contains a root element, just return it. Otherwise, create one.
+        if nodes.len() == 1 {
+            nodes.remove(0)
+        } else {
+            dom::elem("html".to_string(), HashMap::new(), nodes)
+        }
+    }
 }
