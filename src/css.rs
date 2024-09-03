@@ -2,6 +2,7 @@
     A CSS stylesheet is a series of rules.
  */
 
+// Data structures;
 
 pub struct Stylesheet {
     pub rules: Vec<Rule>,
@@ -81,6 +82,30 @@ pub struct Color {
 }
 
 
+pub type Specificity = (usize, usize, usize);
+
+impl Selector {
+    pub fn specificity(&self) -> Specificity {
+        // http://www.w3.org/TR/selectors/#specificity
+        let Selector::Simple(ref simple) = *self;
+        let a = simple.id.iter().count();
+        let b = simple.class.len();
+        let c = simple.tag_name.iter().count();
+        (a, b, c)
+    }
+}
+
+impl Value {
+    /// Return the size of a length in px, or zero for non-lengths.
+    pub fn to_px(&self) -> f32 {
+        match *self {
+            Value::Length(f, Unit::Px) => f,
+            _ => 0.0,
+        }
+    }
+}
+
+
 /*
     CSS has a straightforward [grammar](https://www.w3.org/TR/CSS2/grammar.html),
     making it easier to parse correctly than its quirky cousin HTML.
@@ -93,13 +118,6 @@ pub struct Color {
 struct Parser {
     pos: usize,
     input: String,
-}
-
-
-/// Parse a whole CSS stylesheet.
-pub fn parse(source: String) -> Stylesheet {
-    let mut parser = Parser { pos: 0, input: source };
-    Stylesheet { rules: parser.parse_rules() }
 }
 
 impl Parser {
@@ -286,6 +304,12 @@ impl Parser {
         }
         rules
     }
+}
+
+/// Parse a whole CSS stylesheet.
+pub fn parse(source: String) -> Stylesheet {
+    let mut parser = Parser { pos: 0, input: source };
+    Stylesheet { rules: parser.parse_rules() }
 }
 
 fn valid_identifier_char(c: char) -> bool {
