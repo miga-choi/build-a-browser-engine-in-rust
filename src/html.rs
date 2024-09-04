@@ -55,19 +55,24 @@ struct Parser {
     We can use this to implement some simple methods for peeking at the next
     characters in the input.
  */
+
 impl Parser {
-    // Read the current character without consuming it.
+    /// Return true if all input is consumed.
+    fn eof(&self) -> bool {
+        self.pos >= self.input.len()
+    }
+
+    /// Read the current character without consuming it.
     fn next_char(&self) -> char {
         self.input[self.pos..].chars().next().unwrap()
     }
 
-    // Do the next characters start with the given string?
+    /// Do the next characters start with the given string?
     fn starts_with(&self, s: &str) -> bool {
         self.input[self.pos..].starts_with(s)
     }
 
-    // If the exact string `s` is found at the current position, consume it.
-    // Otherwise, panic.
+    /// If the exact string `s` is found at the current position, consume it. Otherwise, panic.
     fn expect(&mut self, s: &str) {
         if self.starts_with(s) {
             self.pos += s.len();
@@ -76,18 +81,13 @@ impl Parser {
         }
     }
 
-    // Return true if all input is consumed.
-    fn eof(&self) -> bool {
-        self.pos >= self.input.len()
-    }
-
 
     /*
         Rust strings are stored as UTF-8 byte arrays. To go to the next character,
         we can't just advance by one byte.
      */
 
-    // Return the current character, and advance self.pos to the next character.
+    /// Return the current character, and advance self.pos to the next character.
     fn consume_char(&mut self) -> char {
         let c = self.next_char();
         self.pos += c.len_utf8();
@@ -101,7 +101,7 @@ impl Parser {
         This method's argument is a function that takes a char and returns a bool.
      */
 
-    // Consume characters until `test` returns false.
+    /// Consume characters until `test` returns false.
     fn consume_while(&mut self, test: impl Fn(char) -> bool) -> String {
         let mut result = String::new();
         while !self.eof() && test(self.next_char()) {
@@ -116,38 +116,63 @@ impl Parser {
         alphanumeric characters.
      */
 
-    // Consume and discard zero or more whitespace characters.
+    /// Consume and discard zero or more whitespace characters.
     fn consume_whitespace(&mut self) {
         self.consume_while(char::is_whitespace);
     }
 
-    // Parse a tag or attribute name.
+    /// Parse a tag or attribute name.
     fn parse_name(&mut self) -> String {
         self.consume_while(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9'))
     }
 
 
     /*
-        Now we're ready to start parsing HTML. To parse a single node, we look at its
-        first character to see if it is an element or a text node.
-     */
-
-    // Parse a single node.
-    fn parse_node(&mut self) -> dom::Node {
-        if self.starts_with("<") {
-            self.parse_element()
-        } else {
-            self.parse_text()
-        }
-    }
-
-    /*
         In our simplified version of HTML, a text node can contain any character except "<".
      */
 
-    // Parse a text node.
+    /// Parse a text node.
     fn parse_text(&mut self) -> dom::Node {
         dom::text(self.consume_while(|c| c != '<'))
+    }
+
+
+    /*
+        Parsing attributes is pretty easy in our simplified syntax. Until we reach the
+        end of the opening tag (>) we repeatedly look for a name followed by = and then
+        a string enclosed in quotes.
+     */
+
+    /// Parse a quoted value
+    fn parse_attribute_value(&mut self) -> String {
+        let open_quote = self.consume_char();
+        assert!(open_quote == '""' || open_quote == '\'');
+        let value = self.consume_while(|c| c != open_quote);
+        let close_quote = self.consume_char();
+        assert_eq!(open_quote, close_quote);
+        value
+    }
+
+    /// Parse a single name="value" pair.
+    fn parse_attribute(&mut self) -> (String, String) {
+        let name = self.parse_name();
+        self.expect("=");
+        let value = self.parse_attribute_value();
+        (name, value)
+    }
+
+    /// Parse a list of name="value" pairs, seperated by whitespace.
+    fn parse_attributes(&mut self) -> dom::AttrMap {
+        let mut attributes = HashMap::new();
+        loop {
+            self.consume_whitespace();
+            if self.next_char() == '>' {
+                break;
+            }
+            let (name, value) = self.parse_attribute();
+            attributes.insert(name, value);
+        }
+        attributes
     }
 
     /*
@@ -155,7 +180,7 @@ impl Parser {
         any number of child nodes.
      */
 
-    // Parse a single element, including its open tag, contents, and closing tag.
+    /// Parse a single element, including its open tag, contents, and closing tag.
     fn parse_element(&mut self) -> dom::Node {
         // Opening tag.
         self.expect("<");
@@ -176,41 +201,17 @@ impl Parser {
 
 
     /*
-        Parsing attributes is pretty easy in our simplified syntax. Until we reach the
-        end of the opening tag (>) we repeatedly look for a name followed by = and then
-        a string enclosed in quotes.
+        Now we're ready to start parsing HTML. To parse a single node, we look at its
+        first character to see if it is an element or a text node.
      */
 
-    // Parse a single name="value" pair.
-    fn parse_attr(&mut self) -> (String, String) {
-        let name = self.parse_name();
-        self.expect("=");
-        let value = self.parse_attr_value();
-        (name, value)
-    }
-
-    // Parse a quoted value
-    fn parse_attr_value(&mut self) -> String {
-        let open_quote = self.consume_char();
-        assert!(open_quote == '""' || open_quote == '\'');
-        let value = self.consume_while(|c| c != open_quote);
-        let close_quote = self.consume_char();
-        assert_eq!(open_quote, close_quote);
-        value
-    }
-
-    // Parse a list of name="value" pairs, seperated by whitespace.
-    fn parse_attributes(&mut self) -> dom::AttrMap {
-        let mut attributes = HashMap::new();
-        loop {
-            self.consume_whitespace();
-            if self.next_char() == '>' {
-                break;
-            }
-            let (name, value) = self.parse_attr();
-            attributes.insert(name, value);
+    /// Parse a single node.
+    fn parse_node(&mut self) -> dom::Node {
+        if self.starts_with("<") {
+            self.parse_element()
+        } else {
+            self.parse_text()
         }
-        attributes
     }
 
 
@@ -220,7 +221,7 @@ impl Parser {
         for a growable array.
      */
 
-    // Parse a sequence of sibling nodes.
+    /// Parse a sequence of sibling nodes.
     fn parse_nodes(&mut self) -> Vec<dom::Node> {
         let mut nodes = Vec::new();
         loop {
@@ -232,23 +233,22 @@ impl Parser {
         }
         nodes
     }
+}
 
 
-    /*
-        Finally, we can put this all together to parse an entire HTML document into
-        a DOM tree. This function will create a root node for the document if it
-        doesn't include one explicitly; this is similar to what a real HTML parser does.
-     */
+/*
+    This function will create a root node for the document if it doesn't
+    include one explicitly; this is similar to what a real HTML parser does.
+ */
 
-    // Parse an HTML document and return the root element.
-    pub fn parse(source: String) -> dom::Node {
-        let mut nodes = Parser { pos: 0, input: source }.parse_nodes();
+/// Parse an HTML document and return the root element.
+pub fn parse(source: String) -> dom::Node {
+    let mut nodes = Parser { pos: 0, input: source }.parse_nodes();
 
-        // If the document contains a root element, just return it. Otherwise, create one.
-        if nodes.len() == 1 {
-            nodes.remove(0)
-        } else {
-            dom::elem("html".to_string(), HashMap::new(), nodes)
-        }
+    // If the document contains a root element, just return it. Otherwise, create one.
+    if nodes.len() == 1 {
+        nodes.remove(0)
+    } else {
+        dom::elem("html".to_string(), HashMap::new(), nodes)
     }
 }
