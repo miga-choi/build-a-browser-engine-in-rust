@@ -1,7 +1,6 @@
 use std::collections::HashMap;
-use crate::css::Value;
-use crate::dom::Node;
-
+use crate::css::{Stylesheet, Rule, Selector, SimpleSelector, Value, Specificity};
+use crate::dom::{Node, NodeType, ElementData};
 
 /*
     The Style Tree
@@ -46,3 +45,55 @@ struct StyledNode<'a> {
     specified_values: PropertyMap,
     children: Vec<StyledNode<'a>>,
 }
+
+impl<'a> StyledNode<'a> {
+    /// Return the specified value of a property if it exists, otherwise `None`.
+    pub fn value(&self, name: &str) -> Option<Value> {
+        self.specified_values.get(name).cloned()
+    }
+
+    /// Return the specified value of property `name`,
+    /// or property `fallback_name` if that doesn't exits,
+    /// or value `default` if neither does.
+    pub fn lookup(&self, name: &str, fallback_name: &str, default: &Value) -> Value {
+        self.value(name)
+            .unwrap_or_else(
+                || self.value(fallback_name).unwrap_or_else(|| default.clone())
+            )
+    }
+
+    /// The value of the `display` property (defaults to inline).
+    pub fn display(&self) -> Display {
+        match self.value("display") {
+            Some(Value::Keyword(s)) => match &*s {
+                "block" => Display::Block,
+                "none" => Display::None,
+                _ => Display::Inline,
+            },
+            _ => Display::Inline,
+        }
+    }
+}
+
+/// css `display`
+pub enum Display {
+    Inline,
+    Block,
+    None,
+}
+
+/*
+    Selector Matching
+
+    The first step in building the style tree is [selector matching](https://www.w3.org/TR/CSS2/selector.html#pattern-matching).
+    This will be very easy, since the [CSS parser](css.rs) supports only simple selectors.
+    You can tell whether a simple selector matches an element just by looking at the element itself.
+    Matching compound selectors would require traversing the DOM tree to look at the element's siblings, parents, etc.
+ */
+
+fn matches(element: &ElementData, selector: &Selector) -> bool {
+    match selector {
+        Selector::Simple(s) => matches_simple_selector()
+    }
+}
+
