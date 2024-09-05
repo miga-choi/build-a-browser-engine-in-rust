@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::css::{Stylesheet, Rule, Selector, SimpleSelector, Value, Specificity};
-use crate::dom::{Node, NodeType, ElementData};
+use crate::dom::{Node, NodeType, ElementData, elem};
 
 /*
     The Style Tree
@@ -92,9 +92,41 @@ impl<'a> StyledNode<'a> {
     Matching compound selectors would require traversing the DOM tree to look at the element's siblings, parents, etc.
  */
 
+/// Selector matching
 fn matches(element: &ElementData, selector: &Selector) -> bool {
     match selector {
-        Selector::Simple(s) => matches_simple_selector()
+        Selector::Simple(s) => matches_simple_selector(element, s)
     }
 }
 
+/*
+    To test whether a simple selector matches an element, just look at each selector component,
+    and return false if the element doesn't have a matching class, ID, or tag name.
+
+    Rust note: This function uses the [any](https://doc.rust-lang.org/core/iter/trait.Iterator.html#method.any)
+    method, which returns true if an iterator contains an element that passes the provided test.
+    This is the same as the [any](https://docs.python.org/3/library/functions.html#any)
+    function in Python (or [Haskell](https://hackage.haskell.org/package/base-4.7.0.1/docs/Prelude.html#v:any))
+    or the [some](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/some)
+    method in JavaScript.
+ */
+
+fn matches_simple_selector(element: &ElementData, selector: &SimpleSelector) -> bool {
+    // Check type selector
+    if selector.tag_name.iter().any(|name| element.tag_name != *name) {
+        return false;
+    }
+
+    // Check ID selector
+    if selector.id.iter().any(|id| element.id() != Some(id)) {
+        return false;
+    }
+
+    // Check class selectors
+    if selector.class.iter().any(|class| !element.classes().contains(class.as_str())) {
+        return false;
+    }
+
+    // We didn't find any non-matching selector components.
+    true
+}

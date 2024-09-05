@@ -34,8 +34,8 @@ pub enum NodeType {
  */
 
 pub struct ElementData {
-    tag_name: String,
-    attrs: AttrMap,
+    pub tag_name: String,
+    pub attrs: AttrMap,
 }
 
 pub type AttrMap = HashMap<String, String>;
