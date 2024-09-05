@@ -46,6 +46,13 @@ struct StyledNode<'a> {
     children: Vec<StyledNode<'a>>,
 }
 
+/// css `display`
+pub enum Display {
+    Inline,
+    Block,
+    None,
+}
+
 impl<'a> StyledNode<'a> {
     /// Return the specified value of a property if it exists, otherwise `None`.
     pub fn value(&self, name: &str) -> Option<Value> {
@@ -75,12 +82,6 @@ impl<'a> StyledNode<'a> {
     }
 }
 
-/// css `display`
-pub enum Display {
-    Inline,
-    Block,
-    None,
-}
 
 /*
     Selector Matching

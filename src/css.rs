@@ -57,6 +57,7 @@ pub struct Declaration {
     This engine supports only a handful of CSS's many value types.
  */
 
+#[derive(Clone)]
 pub enum Value {
     Keyword(String),
     Length(f32, Unit),
@@ -64,6 +65,7 @@ pub enum Value {
     // insert more values here
 }
 
+#[derive(Clone)]
 pub enum Unit {
     Px,
     // insert more values here
@@ -73,7 +75,7 @@ pub enum Unit {
 /*
     Rust note: u8 is an 8-bit unsigned integer, and f32 is a 32-bit float.
  */
-
+#[derive(Clone)]
 pub struct Color {
     pub r: u8,
     pub g: u8,

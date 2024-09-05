@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
-
+use std::collections::{HashMap, HashSet};
+use std::mem::offset_of;
 /*
     The DOM is a tree of nodes. A node has zero or more children. (It also has
     various other attributes and methods, but we can ignore most of those for now.)
@@ -57,5 +56,27 @@ pub fn elem(tag_name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
     Node {
         children,
         node_type: NodeType::Element(ElementData { tag_name, attrs }),
+    }
+}
+
+
+/*
+    To help, we'll add some convenient ID and class accessors to out [DOM element type](dom.rs).
+    The class attribute can contain multiple class names separated by spaces, which we return
+    in a hash table.
+ */
+
+// Element methods
+
+impl ElementData {
+    pub fn id(&self) -> Option<&String> {
+        self.attrs.get("id")
+    }
+
+    pub fn classes(&self) -> HashSet<&str> {
+        match self.attrs.get("class") {
+            Some(classlist) => classlist.split(' ').collect(),
+            Node => HashSet::new()
+        }
     }
 }
