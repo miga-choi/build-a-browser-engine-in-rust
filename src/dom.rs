@@ -7,10 +7,10 @@ use std::mem::offset_of;
 
 pub struct Node {
     // data common to all nodes
-    children: Vec<Node>,
+    pub children: Vec<Node>,
 
     // data specific to each node type
-    node_type: NodeType,
+    pub node_type: NodeType,
 }
 
 
@@ -22,8 +22,8 @@ pub struct Node {
  */
 
 pub enum NodeType {
-    Text(String),
-    Element(ElementData),
+    pub Text(String),
+    pub Element(ElementData),
 }
 
 
@@ -52,7 +52,7 @@ pub fn text(data: String) -> Node {
     }
 }
 
-pub fn elem(tag_name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
+pub fn element(tag_name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
     Node {
         children,
         node_type: NodeType::Element(ElementData { tag_name, attrs }),

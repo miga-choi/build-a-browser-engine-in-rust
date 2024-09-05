@@ -196,7 +196,7 @@ impl Parser {
         self.expect(&tag_name);
         self.expect(">");
 
-        dom::elem(tag_name, attrs, children)
+        dom::element(tag_name, attrs, children)
     }
 
 
@@ -249,6 +249,6 @@ pub fn parse(source: String) -> dom::Node {
     if nodes.len() == 1 {
         nodes.remove(0)
     } else {
-        dom::elem("html".to_string(), HashMap::new(), nodes)
+        dom::element("html".to_string(), HashMap::new(), nodes)
     }
 }
