@@ -1,3 +1,14 @@
+//! A simple parser for a tiny subset of HTML.
+//!
+//! Can parse basic opening and closing tags, and text nodes.
+//!
+//! Not yes supported:
+//!     - Comments
+//!     - Doctypes and processing instructions
+//!     - Self-closing tags
+//!     - Non-well-formed markup
+//!     - Character entities
+
 use crate::dom;
 use std::collections::HashMap;
 
@@ -45,6 +56,7 @@ use std::collections::HashMap;
     The position is the index of the next character we haven't processed yet.
  */
 
+// Default Parser structure
 struct Parser {
     pos: usize, // "usize" is an unsigned integer, similar to "size_t" in C
     input: String,
@@ -56,6 +68,7 @@ struct Parser {
     characters in the input.
  */
 
+// Implemented Parser based on Default Parser
 impl Parser {
     /// Return true if all input is consumed.
     fn eof(&self) -> bool {

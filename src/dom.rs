@@ -1,5 +1,8 @@
+//! Basic DOM data structures.
+
 use std::collections::{HashMap, HashSet};
-use std::mem::offset_of;
+
+
 /*
     The DOM is a tree of nodes. A node has zero or more children. (It also has
     various other attributes and methods, but we can ignore most of those for now.)
@@ -21,9 +24,10 @@ pub struct Node {
     a "tagged union" or "sum type").
  */
 
+// e.g. NodeType { Text("..."), Element(ElementData) }
 pub enum NodeType {
-    pub Text(String),
-    pub Element(ElementData),
+    Text(String),
+    Element(ElementData),
 }
 
 
@@ -33,11 +37,13 @@ pub enum NodeType {
     stores tag and attribute names as simple strings.
  */
 
+// e.g. ElementData { "tag_name": "p", attrs: AttrMap }
 pub struct ElementData {
     pub tag_name: String,
     pub attrs: AttrMap,
 }
 
+// e.g. { "class": "...", "style": "..."}
 pub type AttrMap = HashMap<String, String>;
 
 

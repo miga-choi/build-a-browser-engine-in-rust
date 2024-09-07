@@ -1,3 +1,8 @@
+//! A simple parser for a tiny subset of CSS.
+//!
+//! To support more CSS syntax, it would probably be easiest to replace
+//! this hand-rolled parser with one based on a library or parser generator.
+
 /*
     A CSS stylesheet is a series of rules.
  */
@@ -32,10 +37,12 @@ pub struct Rule {
     There are many other types of selector (especially in CSS3), but this will do for now.
  */
 
+// Default Selector Enum
 pub enum Selector {
     Simple(SimpleSelector),
 }
 
+// Default SimpleSelector structure
 pub struct SimpleSelector {
     pub tag_name: Option<String>,
     pub id: Option<String>,
@@ -47,6 +54,7 @@ pub struct SimpleSelector {
     A declaration is just a name/value pair, separated by a colon and ending with a semicolon.
  */
 
+// e.g. Declaration { name: "display", value: "block" }
 pub struct Declaration {
     pub name: String,
     pub value: Value,
