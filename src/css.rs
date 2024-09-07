@@ -9,6 +9,7 @@
 
 // Data structures;
 
+// Default Stylesheet structure
 pub struct Stylesheet {
     pub rules: Vec<Rule>,
 }
@@ -19,6 +20,7 @@ pub struct Stylesheet {
     followed by a series of declarations enclosed in braces.
  */
 
+// e.g. Rule { selectors: []
 pub struct Rule {
     pub selectors: Vec<Selector>,
     pub declarations: Vec<Declaration>,
@@ -43,6 +45,7 @@ pub enum Selector {
 }
 
 // Default SimpleSelector structure
+// e.g. SimpleSelector { tag_name: "p", id: "...", class: [ "...", ... ] }
 pub struct SimpleSelector {
     pub tag_name: Option<String>,
     pub id: Option<String>,
@@ -94,6 +97,7 @@ pub struct Color {
 
 pub type Specificity = (usize, usize, usize);
 
+// Implemented Selector based on Default Selector
 impl Selector {
     pub fn specificity(&self) -> Specificity {
         // http://www.w3.org/TR/selectors/#specificity
@@ -125,11 +129,13 @@ impl Value {
     output in older browsers.
  */
 
+// Default CSS Parser structure
 struct Parser {
     pos: usize,
     input: String,
 }
 
+// Implemented Parser based on Default CSS Parser
 impl Parser {
     /// Return true if all input is consumed.
     fn eof(&self) -> bool {

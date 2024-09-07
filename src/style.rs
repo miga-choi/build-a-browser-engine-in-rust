@@ -1,3 +1,5 @@
+//! Code for applying CSS styles to the DOM.
+
 use std::collections::HashMap;
 use crate::css::{Stylesheet, Rule, Selector, SimpleSelector, Value, Specificity};
 use crate::dom::{Node, ElementData};
@@ -46,7 +48,7 @@ struct StyledNode<'a> {
     children: Vec<StyledNode<'a>>,
 }
 
-/// css `display`
+/// css: `display`
 pub enum Display {
     Inline,
     Block,
@@ -210,3 +212,27 @@ pub fn style_tree<'a>(root: &'a Node, stylesheet: &'a Stylesheet) -> StyledNode<
         children: root.children.iter().map(|child| style_tree(child, stylesheet)).collect(),
     }
 }
+
+
+/*
+    The Cascade
+
+    Style sheets provided by the author of a web page are called "author style sheets".
+    In addition to these, browsers also provide [default styles](https://www.w3.org/TR/CSS2/sample.html)
+    via "user agent style sheets". And they may allow users to add custom styles through
+    "user style sheets" (like Gecko's [userContent.css](https://www-archive.mozilla.org/unix/customizing.html#usercss).
+
+    The [cascade](https://www.w3.org/TR/CSS2/cascade.html#cascade) defines which of these three "origins"
+    takes precedence over another. There are six levels to the cascade: one for each origin's "normal" declarations,
+    plus one for each origin's !important declarations.
+
+    This engine's style code does not implement the cascade; it takes only a single style sheet.
+    The lack of a default style sheet means that HTML elements will not have any of the default
+    styles you might expect. For example, the <head> element's contents will not be hidden unless
+    you explicitly add this rule to your style sheet: `head { display: none; }`
+
+    Implementing the cascade should by fairly easy: Just track the origin of each rule,
+    and sort declarations by origin and importance in addition to specificity.
+    A simplified, two-level  cascade should be enough to support the most common cases:
+    normal user agent styles and normal author styles.
+ */
