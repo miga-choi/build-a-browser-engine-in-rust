@@ -37,14 +37,19 @@ pub enum NodeType {
     stores tag and attribute names as simple strings.
  */
 
-// e.g. ElementData { "tag_name": "p", attrs: AttrMap }
+/*
+    Default ElementData
+
+    e.g.
+        ElementData { "tag_name": "p", attrs: AttrMap }
+ */
 pub struct ElementData {
     pub tag_name: String,
-    pub attrs: AttrMap,
+    pub attributes: AttributeMap,
 }
 
 // e.g. { "class": "...", "style": "..."}
-pub type AttrMap = HashMap<String, String>;
+pub type AttributeMap = HashMap<String, String>;
 
 
 /*
@@ -58,10 +63,10 @@ pub fn text(data: String) -> Node {
     }
 }
 
-pub fn element(tag_name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
+pub fn element(tag_name: String, attributes: AttributeMap, children: Vec<Node>) -> Node {
     Node {
         children,
-        node_type: NodeType::Element(ElementData { tag_name, attrs }),
+        node_type: NodeType::Element(ElementData { tag_name, attributes }),
     }
 }
 
@@ -74,13 +79,14 @@ pub fn element(tag_name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
 
 // Element methods
 
+// Implemented ElementData based on Default ElementData
 impl ElementData {
     pub fn id(&self) -> Option<&String> {
-        self.attrs.get("id")
+        self.attributes.get("id")
     }
 
     pub fn classes(&self) -> HashSet<&str> {
-        match self.attrs.get("class") {
+        match self.attributes.get("class") {
             Some(classlist) => classlist.split(' ').collect(),
             Node => HashSet::new()
         }
