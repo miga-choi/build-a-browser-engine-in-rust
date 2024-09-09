@@ -56,9 +56,17 @@ use std::collections::HashMap;
     The position is the index of the next character we haven't processed yet.
  */
 
+/// HTML Parser struct
+/*
+    e.g.
+        Parser {
+            input: Input String,
+            position: Position of Input String
+        }
+ */
 struct Parser {
-    pos: usize, // "usize" is an unsigned integer, similar to "size_t" in C
     input: String,
+    position: usize, // "usize" is an unsigned integer, similar to "size_t" in C
 }
 
 
@@ -67,29 +75,29 @@ struct Parser {
     characters in the input.
  */
 
-// Implemented HTML Parser based on Default HTML Parser
 impl Parser {
     /// Return true if all input is consumed.
     fn eof(&self) -> bool {
-        self.pos >= self.input.len()
+        self.position >= self.input.len()
     }
 
     /// Read the current character without consuming it.
     fn next_char(&self) -> char {
-        self.input[self.pos..].chars().next().unwrap()
+        self.input[self.position..].chars().next().unwrap()
     }
 
     /// Do the next characters start with the given string?
     fn starts_with(&self, s: &str) -> bool {
-        self.input[self.pos..].starts_with(s)
+        self.input[self.position..].starts_with(s)
     }
 
-    /// If the exact string `s` is found at the current position, consume it. Otherwise, panic.
+    /// If the exact string `s` is found at the current position, consume it.
+    /// Otherwise, panic.
     fn expect(&mut self, s: &str) {
         if self.starts_with(s) {
-            self.pos += s.len();
+            self.position += s.len();
         } else {
-            panic!("Expected {:?} at byte {} but it was not found", s, self.pos);
+            panic!("Expected {:?} at byte {} but it was not found", s, self.position);
         }
     }
 
@@ -99,10 +107,10 @@ impl Parser {
         we can't just advance by one byte.
      */
 
-    /// Return the current character, and advance self.pos to the next character.
+    /// Return the current character, and advance self.position to the next character.
     fn consume_char(&mut self) -> char {
         let c = self.next_char();
-        self.pos += c.len_utf8();
+        self.position += c.len_utf8();
         c
     }
 
@@ -255,7 +263,7 @@ impl Parser {
 
 /// Parse an HTML document and return the root element.
 pub fn parse(source: String) -> dom::Node {
-    let mut nodes = Parser { pos: 0, input: source }.parse_nodes();
+    let mut nodes = Parser { position: 0, input: source }.parse_nodes();
 
     // If the document contains a root element, just return it. Otherwise, create one.
     if nodes.len() == 1 {
