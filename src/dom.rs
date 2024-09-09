@@ -24,10 +24,16 @@ pub struct Node {
     a "tagged union" or "sum type").
  */
 
-// e.g. NodeType { Text("..."), Element(ElementData) }
+/*
+    e.g.
+        NodeType {
+            Text("..."),
+            Element(ElementData),
+        }
+ */
 pub enum NodeType {
     Text(String),
-    Element(ElementData),
+    Element(Element),
 }
 
 
@@ -38,17 +44,21 @@ pub enum NodeType {
  */
 
 /*
-    Default ElementData
-
     e.g.
-        ElementData { "tag_name": "p", attrs: AttrMap }
+        Element {
+            tag_name: "p",
+            attrs: AttrMap
+        }
  */
-pub struct ElementData {
+pub struct Element {
     pub tag_name: String,
     pub attributes: AttributeMap,
 }
 
-// e.g. { "class": "...", "style": "..."}
+
+/*
+    e.g. { "id": "...", "class": "...", "style": "..." }
+ */
 pub type AttributeMap = HashMap<String, String>;
 
 
@@ -56,17 +66,19 @@ pub type AttributeMap = HashMap<String, String>;
     Some constructor functions to make it easy to create new codes:
  */
 
+/// Return a new `Node` with `Text`
 pub fn text(data: String) -> Node {
     Node {
-        children: Vec::new(),
         node_type: NodeType::Text(data),
+        children: Vec::new(),
     }
 }
 
+/// Return a new `Node` with `Element`
 pub fn element(tag_name: String, attributes: AttributeMap, children: Vec<Node>) -> Node {
     Node {
+        node_type: NodeType::Element(Element { tag_name, attributes }),
         children,
-        node_type: NodeType::Element(ElementData { tag_name, attributes }),
     }
 }
 
@@ -79,16 +91,18 @@ pub fn element(tag_name: String, attributes: AttributeMap, children: Vec<Node>) 
 
 // Element methods
 
-// Implemented ElementData based on Default ElementData
-impl ElementData {
+/// `Element` struct
+impl Element {
+    /// Return "ID" String or `None`
     pub fn id(&self) -> Option<&String> {
         self.attributes.get("id")
     }
 
+    /// Return "Class" Set or empty Set
     pub fn classes(&self) -> HashSet<&str> {
         match self.attributes.get("class") {
-            Some(classlist) => classlist.split(' ').collect(),
-            Node => HashSet::new()
+            Some(class_list) => class_list.split(' ').collect(),
+            Node => HashSet::new(),
         }
     }
 }

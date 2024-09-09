@@ -56,7 +56,6 @@ use std::collections::HashMap;
     The position is the index of the next character we haven't processed yet.
  */
 
-// Default HTML Parser structure
 struct Parser {
     pos: usize, // "usize" is an unsigned integer, similar to "size_t" in C
     input: String,
@@ -175,7 +174,7 @@ impl Parser {
     }
 
     /// Parse a list of name="value" pairs, seperated by whitespace.
-    fn parse_attributes(&mut self) -> dom::AttrMap {
+    fn parse_attributes(&mut self) -> dom::AttributeMap {
         let mut attributes = HashMap::new();
         loop {
             self.consume_whitespace();
