@@ -7,20 +7,18 @@
     A CSS stylesheet is a series of rules.
  */
 
-// Data structures;
+// Data structures:
 
-// Default Stylesheet structure
+/// Stylesheet structure
 pub struct Stylesheet {
     pub rules: Vec<Rule>,
 }
 
-
+/// A rule includes one or more selectors separated by commas,
+/// followed by a series of declarations enclosed in braces.
 /*
-    A rule includes one or more selectors separated by commas,
-    followed by a series of declarations enclosed in braces.
+    Rule = Selector (External/Internal CSS) + Declaration (Inline CSS)
  */
-
-// e.g. Rule { selectors: []
 pub struct Rule {
     pub selectors: Vec<Selector>,
     pub declarations: Vec<Declaration>,
@@ -38,14 +36,17 @@ pub struct Rule {
 
     There are many other types of selector (especially in CSS3), but this will do for now.
  */
-
-// Default Selector Enum
+/// Selector enum (only support simple selectors)
 pub enum Selector {
     Simple(SimpleSelector),
 }
 
-// Default SimpleSelector structure
-// e.g. SimpleSelector { tag_name: "p", id: "...", class: [ "...", ... ] }
+/// SimpleSelector structure (select elements based on name, id, class)
+/*
+    SimpleSelector is External/Internal CSS.
+    e.g.
+        SimpleSelector { tag_name: "p", id: "id1", class: [ "class1", ... ] }
+ */
 pub struct SimpleSelector {
     pub tag_name: Option<String>,
     pub id: Option<String>,
@@ -53,21 +54,25 @@ pub struct SimpleSelector {
 }
 
 
+/// A declaration is just a name/value pair,
+/// separated by a colon and ending with a semicolon.
 /*
-    A declaration is just a name/value pair, separated by a colon and ending with a semicolon.
- */
+    Declaration is Inline CSS.
 
-// e.g. Declaration { name: "display", value: "block" }
+    e.g.
+        Declaration { name: "display", value: Value }
+ */
 pub struct Declaration {
     pub name: String,
     pub value: Value,
 }
 
 
+/// This engine supports only a handful of CSS's many value types.
 /*
-    This engine supports only a handful of CSS's many value types.
+    e.g.
+        Value.Keywords("block"), Value.Length(f32, Unit), ColorValue(Color),
  */
-
 #[derive(Clone)]
 pub enum Value {
     Keyword(String),
@@ -76,6 +81,12 @@ pub enum Value {
     // insert more values here
 }
 
+/*
+    Unit like px, em, rem
+
+    e.g.
+        Unit.Px, Unit.Em, Unit.Rem
+ */
 #[derive(Clone)]
 pub enum Unit {
     Px,
@@ -83,7 +94,11 @@ pub enum Unit {
 }
 
 
+/// Color struct with rgba(red, green, red, alpha)
 /*
+    e.g.
+        Color { r: 255, g: 255, b:255, alpha: 1 }
+
     Rust note: u8 is an 8-bit unsigned integer, and f32 is a 32-bit float.
  */
 #[derive(Clone)]
@@ -197,6 +212,7 @@ impl Parser {
             a: 255,
         })
     }
+
     fn parse_unit(&mut self) -> Unit {
         match &*self.parse_identifier().to_ascii_lowercase() {
             "px" => Unit::Px,
@@ -328,6 +344,10 @@ pub fn parse(source: String) -> Stylesheet {
     Stylesheet { rules: parser.parse_rules() }
 }
 
+/// check validation of char input
+/*
+    char input must be a-z or A-Z or 0-9 or - or _
+ */
 fn valid_identifier_char(c: char) -> bool {
     // TODO: Include U+00A0 and higher.
     matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_')
