@@ -1,8 +1,13 @@
 //! Code for applying CSS styles to the DOM.
 
-use crate::dom::Node;
+use crate::dom::{Element, Node};
 use std::collections::HashMap;
-use crate::css::Value;
+use crate::css::{Rule, Selector, SimpleSelector, Specificity, Stylesheet, Value};
+use crate::css::Selector::Simple;
+/*
+    The output of this engine's style module is something I call the "style tree".
+    Each node in this tree includes a pointer to a DOM node, plus its CSS property values.
+ */
 
 /// Map from CSS property names to values.
 /*
@@ -17,11 +22,15 @@ pub type PropertyMap = HashMap<String, Value>;
 
 /// A node with associated style data.
 /*
+    What’s with all the 'a stuff? Those are lifetimes, part of how Rust guarantees
+    that pointers are memory-safe without requiring garbage collection. If you’re not
+    working in Rust you can ignore them; they aren’t critical to the code’s meaning.
+
     e.g.
-        StyledNode {
-            node: Node,
+        StyledNode<'a> {
+            node: &'a Node,
             specified_values: PropertyMap,
-            children: Vec<StyleNode<'a>>,
+            children: Vec<StyledNode<'a>>,
         }
  */
 pub struct StyledNode<'a> {
@@ -31,15 +40,15 @@ pub struct StyledNode<'a> {
 }
 
 
-/// CSS's `display` property
+/// CSS's `display` enum
 /*
     e.g.
-        Display.Inline, Display.Block, Display.None
+        Display::Inline, Display::Block, Display::None
  */
 pub enum Display {
-    Inline, // display: inline
-    Block,  // display: block
-    None,   // display: none
+    Inline,
+    Block,
+    None,
 }
 
 impl<'a> StyledNode<'a> {
@@ -68,3 +77,7 @@ impl<'a> StyledNode<'a> {
         }
     }
 }
+
+/// A single CSS rule and the specificity of its most specific matching selector.
+type MatchedRule<'a> = (Specificity, &'a Rule);
+

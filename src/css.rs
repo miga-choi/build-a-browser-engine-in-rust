@@ -25,6 +25,7 @@ pub struct Rule {
 }
 
 
+/// Selector enum (only support simple selectors)
 /*
     A selector can be a [simple selector](https://www.w3.org/TR/CSS2/selector.html#selector-syntax),
     or it can be a chain of selectors joined by combinators.
@@ -36,7 +37,6 @@ pub struct Rule {
 
     There are many other types of selector (especially in CSS3), but this will do for now.
  */
-/// Selector enum (only support simple selectors)
 pub enum Selector {
     Simple(SimpleSelector),
 }
@@ -71,7 +71,9 @@ pub struct Declaration {
 /// This engine supports only a handful of CSS's many value types.
 /*
     e.g.
-        Value.Keywords("block"), Value.Length(f32, Unit), ColorValue(Color),
+        Value::Keywords("block")
+        Value::Length(30, Unit::Px)
+        Value::ColorValue(Color { r: 0, g: 0, b: 0, a: 1 })
  */
 #[derive(Clone)]
 pub enum Value {
@@ -81,11 +83,13 @@ pub enum Value {
     // insert more values here
 }
 
+
+/// Unit enum
 /*
     Unit like px, em, rem
 
     e.g.
-        Unit.Px, Unit.Em, Unit.Rem
+        Unit::Px, Unit::Em, Unit::Rem
  */
 #[derive(Clone)]
 pub enum Unit {
@@ -97,7 +101,8 @@ pub enum Unit {
 /// Color struct with rgba(red, green, red, alpha)
 /*
     e.g.
-        Color { r: 255, g: 255, b:255, alpha: 1 }
+        Color { r: 0, g: 0, b: 0, a: 1 }       => black
+        Color { r: 255, g: 255, b: 255, a: 1 } => white
 
     Rust note: u8 is an 8-bit unsigned integer, and f32 is a 32-bit float.
  */
@@ -110,9 +115,24 @@ pub struct Color {
 }
 
 
+/// Specificity type
+/*
+    Specificity is one of the ways a rendering engine decides which style overrides
+    the other in a conflict. If a stylesheet contains two rules that match an element,
+    the rule with the matching selector of higher specificity can override values from
+    the one with lower specificity.
+
+    The specificity of a selector is based on its components. An ID selector is more
+    specific than a class selector, which is more specific than a tag selector.
+    Within each of these “levels,” more selectors beats fewer.
+
+    Count of (id, class, tag)
+ */
 pub type Specificity = (usize, usize, usize);
 
-// Implemented Selector based on Default Selector
+
+// impl
+
 impl Selector {
     pub fn specificity(&self) -> Specificity {
         // http://www.w3.org/TR/selectors/#specificity
@@ -146,26 +166,26 @@ impl Value {
 
 // Default CSS Parser structure
 struct Parser {
-    pos: usize,
     input: String,
+    position: usize,
 }
 
 // Implemented Parser based on Default CSS Parser
 impl Parser {
     /// Return true if all input is consumed.
     fn eof(&self) -> bool {
-        self.pos >= self.input.len()
+        self.position >= self.input.len()
     }
 
     /// Read the current character without consuming it.
     fn next_char(&self) -> char {
-        self.input[self.pos..].chars().next().unwrap()
+        self.input[self.position..].chars().next().unwrap()
     }
 
-    /// Return the current character, and advance self.pos to the next character.
+    /// Return the current character, and advance self.position to the next character.
     fn consume_char(&mut self) -> char {
         let c = self.next_char();
-        self.pos += c.len_utf8();
+        self.position += c.len_utf8();
         c
     }
 
@@ -173,7 +193,7 @@ impl Parser {
     /// Otherwise, panic.
     fn expect_char(&mut self, c: char) {
         if self.consume_char() != c {
-            panic!("Expected {:?} at byte {} but it was not found", c, self.pos);
+            panic!("Expected {:?} at byte {} but it was not found", c, self.position);
         }
     }
 
@@ -198,8 +218,8 @@ impl Parser {
 
     /// Parse two hexadecimal digits.
     fn parse_hex_pair(&mut self) -> u8 {
-        let s = &self.input[self.pos..self.pos + 2];
-        self.pos += 2;
+        let s = &self.input[self.position..self.position + 2];
+        self.position += 2;
         u8::from_str_radix(s, 16).unwrap()
     }
 
@@ -244,6 +264,7 @@ impl Parser {
         self.consume_whitespace();
         self.expect_char(':');
         self.consume_whitespace();
+
         let value = self.parse_value();
         self.consume_whitespace();
         self.expect_char(';');
@@ -290,7 +311,7 @@ impl Parser {
                 c if valid_identifier_char(c) => {
                     selector.tag_name = Some(self.parse_identifier());
                 }
-                _ => break,
+                _ => break
             }
         }
         selector
@@ -340,7 +361,7 @@ impl Parser {
 
 /// Parse a whole CSS stylesheet.
 pub fn parse(source: String) -> Stylesheet {
-    let mut parser = Parser { pos: 0, input: source };
+    let mut parser = Parser { position: 0, input: source };
     Stylesheet { rules: parser.parse_rules() }
 }
 

@@ -9,11 +9,11 @@ use std::collections::{HashMap, HashSet};
  */
 
 pub struct Node {
-    // data common to all nodes
-    pub children: Vec<Node>,
-
     // data specific to each node type
     pub node_type: NodeType,
+
+    // data common to all nodes
+    pub children: Vec<Node>,
 }
 
 
@@ -32,8 +32,8 @@ pub struct Node {
         }
  */
 pub enum NodeType {
-    Text(String),
     Element(Element),
+    Text(String),
 }
 
 
@@ -46,8 +46,8 @@ pub enum NodeType {
 /*
     e.g.
         Element {
-            tag_name: "p",
-            attrs: AttrMap
+            tag_name: "div",
+            attributes: AttributeMap,
         }
  */
 pub struct Element {
@@ -57,7 +57,10 @@ pub struct Element {
 
 
 /*
-    e.g. { "id": "...", "class": "...", "style": "..." }
+    e.g.
+        "id": "...",
+        "class": "...",
+        "style": "..."
  */
 pub type AttributeMap = HashMap<String, String>;
 
