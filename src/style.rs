@@ -1,4 +1,6 @@
 //! Code for applying CSS styles to the DOM.
+//!
+//! I will call it "CSS Renderer"
 
 use crate::dom::{Element, Node};
 use std::collections::HashMap;
@@ -81,3 +83,38 @@ impl<'a> StyledNode<'a> {
 /// A single CSS rule and the specificity of its most specific matching selector.
 type MatchedRule<'a> = (Specificity, &'a Rule);
 
+
+/*
+    The first step in building the style tree is [selector matching](https://www.w3.org/TR/CSS2/selector.html#pattern-matching).
+    This will be very easy, since my CSS parser supports only simple selectors.
+    You can tell whether a simple selector matches an element just by looking at
+    the element itself. Matching compound selectors would require traversing
+    the DOM tree to look at the element’s siblings, parents, etc.
+ */
+
+/// Selector matching:
+fn matches(element: Element, selector: &Selector) -> bool {
+    match selector {
+        Simple(s) => matches_simple_selector(element, s)
+    }
+}
+
+fn matches_simple_selector(element: Element, selector: &SimpleSelector) -> bool {
+    // Check "tag" selector
+    if selector.tag_name.iter().any(|name: &String| element.tag_name != *name) {
+        return false;
+    }
+
+    // Check "id" selector
+    if selector.id.iter().any(|id: &String| element.id() != Some(id)) {
+        return false;
+    }
+
+    // Check "class" selectors
+    if selector.class.iter().any(|class: &String| !element.classes().contains(class.as_str())) {
+        return false;
+    }
+
+    // We didn't find any non-matching selector components.
+    true
+}
