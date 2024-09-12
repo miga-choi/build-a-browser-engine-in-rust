@@ -87,7 +87,7 @@ pub fn element(tag_name: String, attributes: AttributeMap, children: Vec<Node>) 
 
 
 /*
-    To help, we'll add some convenient ID and class accessors to out [DOM element type](dom.rs).
+    To help, we'll add some convenient ID and class accessors to our [DOM element type](dom.rs).
     The class attribute can contain multiple class names separated by spaces, which we return
     in a hash table.
  */

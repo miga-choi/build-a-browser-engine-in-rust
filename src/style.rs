@@ -2,10 +2,10 @@
 //!
 //! I will call it "CSS Renderer"
 
-use crate::dom::{Element, Node};
+use crate::dom;
+use crate::css;
 use std::collections::HashMap;
-use crate::css::{Rule, Selector, SimpleSelector, Specificity, Stylesheet, Value};
-use crate::css::Selector::Simple;
+
 /*
     The output of this engine's style module is something I call the "style tree".
     Each node in this tree includes a pointer to a DOM node, plus its CSS property values.
@@ -19,7 +19,7 @@ use crate::css::Selector::Simple;
         }
  }
  */
-pub type PropertyMap = HashMap<String, Value>;
+pub type PropertyMap = HashMap<String, css::Value>;
 
 
 /// A node with associated style data.
@@ -36,7 +36,7 @@ pub type PropertyMap = HashMap<String, Value>;
         }
  */
 pub struct StyledNode<'a> {
-    pub node: &'a Node,
+    pub node: &'a dom::Node,
     pub specified_values: PropertyMap,
     pub children: Vec<StyledNode<'a>>,
 }
@@ -55,13 +55,13 @@ pub enum Display {
 
 impl<'a> StyledNode<'a> {
     /// Return the specified value of a property if it exists, otherwise `None`.
-    pub fn value(&self, name: &str) -> Option<Value> {
+    pub fn value(&self, name: &str) -> Option<css::Value> {
         self.specified_values.get(name).cloned()
     }
 
     /// Return the specified value of property `name`, or property `fallback_name`
     /// if that doesn't exist, or value `default` if neither does.
-    pub fn lookup(&self, name: &str, fallback_name: &str, default: &Value) -> Value {
+    pub fn lookup(&self, name: &str, fallback_name: &str, default: &css::Value) -> css::Value {
         self.value(name).unwrap_or_else(
             || self.value(fallback_name).unwrap_or_else(|| default.clone())
         )
@@ -70,7 +70,7 @@ impl<'a> StyledNode<'a> {
     /// The value of the `display` property (defaults to inline).
     pub fn display(&self) -> Display {
         match self.value("display") {
-            Some(Value::Keyword(s)) => match &*s {
+            Some(css::Value::Keyword(s)) => match &*s {
                 "block" => Display::Block,
                 "none" => Display::None,
                 _ => Display::Inline,
@@ -81,7 +81,7 @@ impl<'a> StyledNode<'a> {
 }
 
 /// A single CSS rule and the specificity of its most specific matching selector.
-type MatchedRule<'a> = (Specificity, &'a Rule);
+type MatchedRule<'a> = (css::Specificity, &'a css::Rule);
 
 
 /*
@@ -93,13 +93,25 @@ type MatchedRule<'a> = (Specificity, &'a Rule);
  */
 
 /// Selector matching:
-fn matches(element: Element, selector: &Selector) -> bool {
+fn matches(element: &dom::Element, selector: &css::Selector) -> bool {
     match selector {
-        Simple(s) => matches_simple_selector(element, s)
+        css::Selector::Simple(s) => matches_simple_selector(element, s)
     }
 }
 
-fn matches_simple_selector(element: Element, selector: &SimpleSelector) -> bool {
+/*
+    To test whether a simple selector matches an element, just look at each selector
+    component, and return false if the element doesn't have a matching class, id, or
+    tag name.
+
+    Rust node: This function uses the [any](https://doc.rust-lang.org/core/iter/trait.Iterator.html#method.any)
+    method, which returns true if an iterator contains an element that passes the
+    provided test. This is the same as the [any](https://docs.python.org/3/library/functions.html#any)
+    function in Python (or [Haskel](https://hackage.haskell.org/package/base-4.7.0.1/docs/Prelude.html#v:any)),
+    or the [some](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/some)
+    method in JavaScript.
+ */
+fn matches_simple_selector(element: &dom::Element, selector: &css::SimpleSelector) -> bool {
     // Check "tag" selector
     if selector.tag_name.iter().any(|name: &String| element.tag_name != *name) {
         return false;
