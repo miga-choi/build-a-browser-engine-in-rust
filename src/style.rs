@@ -189,3 +189,21 @@ fn specified_values(element: &dom::Element, stylesheet: &css::Stylesheet) -> Pro
 
     values
 }
+
+
+/*
+    Now we have everything we need to walk through the DOM tree and build the style tree.
+    Note that selector matching works only on elements, so the specified values for
+    a text node are just and empty map.
+ */
+/// Apply a stylesheet to an entire DOM tree, returning a `StyledNode` tree.
+pub fn style_tree<'a>(root: &'a dom::Node, stylesheet: &'a css::Stylesheet) -> StyledNode<'a> {
+    StyledNode {
+        node: root,
+        specified_values: match root.node_type {
+            dom::NodeType::Element(ref element) => specified_values(element, stylesheet),
+            dom::NodeType::Text(_) => HashMap::new(),
+        },
+        children: root.children.iter().map(|child: &dom::Node| style_tree(child, stylesheet)).collect(),
+    }
+}
