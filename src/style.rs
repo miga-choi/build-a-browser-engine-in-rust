@@ -2,14 +2,15 @@
 //!
 //! I will call it "CSS Renderer"
 
-use crate::dom;
 use crate::css;
+use crate::dom;
 use std::collections::HashMap;
+
+
 /*
     The output of this engine's style module is something I call the "style tree".
     Each node in this tree includes a pointer to a DOM node, plus its CSS property values.
  */
-
 /// Map from CSS property names to values.
 /*
     e.g.
@@ -79,6 +80,7 @@ impl<'a> StyledNode<'a> {
     }
 }
 
+
 /*
     The first step in building the style tree is [selector matching](https://www.w3.org/TR/CSS2/selector.html#pattern-matching).
     This will be very easy, since my CSS parser supports only simple selectors.
@@ -86,13 +88,13 @@ impl<'a> StyledNode<'a> {
     the element itself. Matching compound selectors would require traversing
     the DOM tree to look at the element’s siblings, parents, etc.
  */
-
 /// Selector matching:
 fn matches(element: &dom::Element, selector: &css::Selector) -> bool {
     match selector {
         css::Selector::Simple(s) => matches_simple_selector(element, s)
     }
 }
+
 
 /*
     To test whether a simple selector matches an element, just look at each selector
@@ -150,6 +152,13 @@ fn match_rule<'a>(element: &dom::Element, rule: &'a css::Rule) -> Option<Matched
         .map(|selector: &css::Selector| (selector.specificity(), rule))
 }
 
+
+/*
+    To find all the rules that match an element we call `filter_map`, which does a linear
+    scan through the style sheet, checking every rule and throwing out ones that don't match.
+    A real browser engine would speed this up by storing the rules in multiple hash tables
+    based on tag name, id, class, etc.
+ */
 /// Find all CSS rules that match the given element.
 fn matching_rules<'a>(element: &dom::Element, stylesheet: &'a css::Stylesheet) -> Vec<MatchedRule<'a>> {
     // For now, we just do a linear scan of all the rules. For large documents,
@@ -159,4 +168,24 @@ fn matching_rules<'a>(element: &dom::Element, stylesheet: &'a css::Stylesheet) -
 }
 
 
+/*
+    Once we have the matching rules, we can find the "specified values" for the element.
+    We insert each rule's property values into a HashMap. We sort the matches by specificity,
+    so the more-specific rules are processed after the less-specific ones, and can overwrite
+    their values in the HashMap.
+ */
+/// Apply styles to a single element, returning the specified values.
+fn specified_values(element: &dom::Element, stylesheet: &css::Stylesheet) -> PropertyMap {
+    let mut values = HashMap::new();
+    let mut rules = matching_rules(element, stylesheet);
 
+    // Go through the rules from lowest to highest specificity.
+    rules.sort_by(|&(a, _), &(b, _)| a.cmp(&b));
+    for (_, rule) in rules {
+        for declaration in &rule.declarations {
+            values.insert(declaration.name.clone(), declaration.value.clone());
+        }
+    }
+
+    values
+}
