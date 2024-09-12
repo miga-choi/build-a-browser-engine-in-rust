@@ -5,7 +5,6 @@
 use crate::dom;
 use crate::css;
 use std::collections::HashMap;
-
 /*
     The output of this engine's style module is something I call the "style tree".
     Each node in this tree includes a pointer to a DOM node, plus its CSS property values.
@@ -80,10 +79,6 @@ impl<'a> StyledNode<'a> {
     }
 }
 
-/// A single CSS rule and the specificity of its most specific matching selector.
-type MatchedRule<'a> = (css::Specificity, &'a css::Rule);
-
-
 /*
     The first step in building the style tree is [selector matching](https://www.w3.org/TR/CSS2/selector.html#pattern-matching).
     This will be very easy, since my CSS parser supports only simple selectors.
@@ -130,3 +125,38 @@ fn matches_simple_selector(element: &dom::Element, selector: &css::SimpleSelecto
     // We didn't find any non-matching selector components.
     true
 }
+
+
+/*
+    Building the Style Tree
+
+    Next we need to traverse the DOM tree. For each element in the tree, we will search
+    the stylesheet for matching rules.
+
+    When comparing two rules that match the same element, we need to use the highest-specificity
+    selector from each match. Because our CSS parser stores the selectors from most- to
+    least-specific, we can stop as soon as we find a matching one, and return its
+    specificity along with a pointer to the rule.
+ */
+
+/// A single CSS rule and the specificity of its most specific matching selector.
+type MatchedRule<'a> = (css::Specificity, &'a css::Rule);
+
+/// If `rule` matches `element`, return a `MatchedRule`. Otherwise return `None`.
+fn match_rule<'a>(element: &dom::Element, rule: &'a css::Rule) -> Option<MatchedRule<'a>> {
+    // Find the first (most specific) matching selector.
+    rule.selectors
+        .iter().find(|selector: &&css::Selector| matches(element, selector))
+        .map(|selector: &css::Selector| (selector.specificity(), rule))
+}
+
+/// Find all CSS rules that match the given element.
+fn matching_rules<'a>(element: &dom::Element, stylesheet: &'a css::Stylesheet) -> Vec<MatchedRule<'a>> {
+    // For now, we just do a linear scan of all the rules. For large documents,
+    // it would be more efficient to store the rules in hash tables based on
+    // tag name, id, class, etc.
+    stylesheet.rules.iter().filter_map(|rule: &css::Rule| match_rule(element, rule)).collect()
+}
+
+
+
