@@ -25,6 +25,8 @@
 
 // CSS box model. All sizes are in px.
 
+use crate::style;
+
 /// Position of the content area relative to the document origin:
 struct Rect {
     x: f32,
@@ -46,4 +48,44 @@ struct Dimensions {
     padding: EdgeSizes,
     border: EdgeSizes,
     margin: EdgeSizes,
+}
+
+
+/*
+    Block and Inline Layout
+
+    The CSS display property determines which type of box an element generates. CSS
+    defines several box types, each with its own layout rules. Here only going to talk
+    about two of them: "block" and "inline".
+
+    I'll use this bit of pseudo-HTML to illustrate the difference:
+        <container>
+            <a></a>
+            <b></b>
+            <c></c>
+            <d></d>
+        </container>
+ */
+
+/*
+    The Layout Tree
+
+    The layout tree is a collection of boxes. A box has dimensions, and it may contain
+    child boxes.
+ */
+struct LayoutBox<'a> {
+    dimensions: Dimensions,
+    box_type: BoxType<'a>,
+    children: Vec<LayoutBox<'a>>,
+}
+
+/*
+    A box can be a block node, an inline node, or an anonymous block box. (This will
+    need to change when I implement text layout, because line wrapping can cause a
+    single inline node to split into multiple boxes. But it will do for now.)
+ */
+enum BoxType<'a> {
+    BlockNode(&'a style::StyledNode<'a>),
+    InlineNode(&'a style::StyledNode<'a>),
+    AnonymousBlock,
 }
