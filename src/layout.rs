@@ -25,7 +25,7 @@
 
 // CSS box model. All sizes are in px.
 
-use crate::style;
+use crate::{css, style};
 
 /// Position of the content area relative to the document origin:
 struct Rect {
@@ -67,16 +67,17 @@ struct Dimensions {
         </container>
  */
 
+/// A node in the layout tree.
 /*
     The Layout Tree
 
     The layout tree is a collection of boxes. A box has dimensions, and it may contain
     child boxes.
  */
-struct LayoutBox<'a> {
-    dimensions: Dimensions,
-    box_type: BoxType<'a>,
-    children: Vec<LayoutBox<'a>>,
+pub struct LayoutBox<'a> {
+    pub dimensions: Dimensions,
+    pub box_type: BoxType<'a>,
+    pub children: Vec<LayoutBox<'a>>,
 }
 
 /*
@@ -89,3 +90,30 @@ enum BoxType<'a> {
     InlineNode(&'a style::StyledNode<'a>),
     AnonymousBlock,
 }
+
+impl<'a> LayoutBox<'a> {
+    fn new(box_type: BoxType<'a>) -> LayoutBox {
+        LayoutBox {
+            box_type,
+            dimensions: Default::default(), // initially set all fields to 0.0
+            children: Vec::new(),
+        }
+    }
+
+    fn get_styled_node(&self) -> &'a style::StyledNode<'a> {
+        match self.box_type {
+            BoxType::BlockNode(node) | BoxType::InlineNode(node) => node,
+            BoxType::AnonymousBlock => panic!("Anonymous block box has no styled node"),
+        }
+    }
+}
+
+
+/*
+    To build the layout tree, we need to look at the display property for each DOM node.
+    I added some code to the style module to get the display value for a node. If there's
+    no specified value it returns the initial value, "inline".
+
+    see style::Display
+    see style::StyledNode
+ */
