@@ -68,6 +68,19 @@ struct Dimensions {
         </container>
  */
 
+
+/*
+    A box can be a block node, an inline node, or an anonymous block box. (This will
+    need to change when I implement text layout, because line wrapping can cause a
+    single inline node to split into multiple boxes. But it will do for now.)
+ */
+enum BoxType<'a> {
+    BlockNode(&'a style::StyledNode<'a>),
+    InlineNode(&'a style::StyledNode<'a>),
+    AnonymousBlock,
+}
+
+
 /// A node in the layout tree.
 /*
     The Layout Tree
@@ -81,16 +94,6 @@ pub struct LayoutBox<'a> {
     pub children: Vec<LayoutBox<'a>>,
 }
 
-/*
-    A box can be a block node, an inline node, or an anonymous block box. (This will
-    need to change when I implement text layout, because line wrapping can cause a
-    single inline node to split into multiple boxes. But it will do for now.)
- */
-enum BoxType<'a> {
-    BlockNode(&'a style::StyledNode<'a>),
-    InlineNode(&'a style::StyledNode<'a>),
-    AnonymousBlock,
-}
 
 impl<'a> LayoutBox<'a> {
     fn new(box_type: BoxType<'a>) -> LayoutBox {
@@ -152,5 +155,26 @@ fn build_layout_tree<'a>(style_node: &'a style::StyledNode<'a>) -> LayoutBox<'a>
             style::Display::None => {} // Don't lay out nodes with `display: none;`
         }
     }
+
     root
+}
+
+
+/*
+    Traversing the Layout Tree
+
+    The entry point to this code is the layout function, which takes a LayoutBox and
+    calculates its dimensions. We'll break this function into three cases, and implement
+    only one of them for now:
+ */
+
+impl LayoutBox {
+    // Lay out a box and its descendants.
+    fn layout(&mut self, containing_block: Dimensions) {
+        match self.box_type {
+            BoxType::BlockNode(_) => self.layout(containing_block),
+            BoxType::InlineNode(_) => {} // TODO
+            BoxType::AnonymousBlock => {} // TODO
+        }
+    }
 }
