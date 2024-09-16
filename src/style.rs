@@ -44,6 +44,10 @@ pub struct StyledNode<'a> {
 
 /// CSS's `display` enum
 /*
+    To build the layout tree, we need to look at the display property for each DOM node.
+    I added some code to the style module to get the display value for a node. If there's
+    no specified value it returns the initial value, "inline".
+
     e.g.
         Display::Inline, Display::Block, Display::None
  */
