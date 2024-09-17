@@ -138,6 +138,7 @@ impl LayoutBox {
     }
 }
 
+
 /// Build the tree of LayoutBoxes, but don't perform any layout calculations yet.
 fn build_layout_tree<'a>(style_node: &'a style::StyledNode<'a>) -> LayoutBox<'a> {
     // Create the root box.
@@ -177,4 +178,32 @@ impl LayoutBox {
             BoxType::AnonymousBlock => {} // TODO
         }
     }
+}
+
+
+/*
+    A block's layout depends on the dimensions of its "containing block". For block boxes
+    in normal flow, this is just the box's parent. For the root element, it's the size of
+    the browser window (or "viewport").
+
+    You may remember from the previous article that a block's width depends on its parent,
+    while its height depends on its children. This means that our code needs to traverse
+    the tree top-down while calculating widths, so it can lay out the children after their
+    parent's width is known, and traverse bottom-up to calculate heights, so that a parent's
+    height is calculated after its children's.
+ */
+fn layout_block(&mut self, containing_block: Dimensions) {
+    // Child width can depend on parent width, so we need to
+    // calculate this box's width before laying out its children.
+    self.calculate_block_width(containing_block);
+
+    // Determine where the box is located within its container.
+    self.calculate_block_position(containing_block);
+
+    // Recursively lay out the children of this box.
+    self.layout_block_children();
+
+    // Parent height can depend on child height, so `calculate_height`
+    // must be called *after* the children are laid out.
+    self.calculate_block_height();
 }
