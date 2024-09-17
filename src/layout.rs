@@ -1,8 +1,6 @@
 //! Basic CSS block layout.
 
-use crate::{style};
-
-
+use crate::{css, style};
 /*
     The layout module takes the style tree and translates it into a bunch of rectangles in
     a two-dimensional space.
@@ -178,32 +176,61 @@ impl LayoutBox {
             BoxType::AnonymousBlock => {} // TODO
         }
     }
-}
+
+    /*
+        A block's layout depends on the dimensions of its "containing block". For block boxes
+        in normal flow, this is just the box's parent. For the root element, it's the size of
+        the browser window (or "viewport").
+
+        You may remember from the previous article that a block's width depends on its parent,
+        while its height depends on its children. This means that our code needs to traverse
+        the tree top-down while calculating widths, so it can lay out the children after their
+        parent's width is known, and traverse bottom-up to calculate heights, so that a parent's
+        height is calculated after its children's.
+     */
+    fn layout_block(&mut self, containing_block: Dimensions) {
+        // Child width can depend on parent width, so we need to
+        // calculate this box's width before laying out its children.
+        self.calculate_block_width(containing_block);
+
+        // Determine where the box is located within its container.
+        self.calculate_block_position(containing_block);
+
+        // Recursively lay out the children of this box.
+        self.layout_block_children();
+
+        // Parent height can depend on child height, so `calculate_height`
+        // must be called *after* the children are laid out.
+        self.calculate_block_height();
+    }
 
 
-/*
-    A block's layout depends on the dimensions of its "containing block". For block boxes
-    in normal flow, this is just the box's parent. For the root element, it's the size of
-    the browser window (or "viewport").
+    /*
+        Calculating the Width
 
-    You may remember from the previous article that a block's width depends on its parent,
-    while its height depends on its children. This means that our code needs to traverse
-    the tree top-down while calculating widths, so it can lay out the children after their
-    parent's width is known, and traverse bottom-up to calculate heights, so that a parent's
-    height is calculated after its children's.
- */
-fn layout_block(&mut self, containing_block: Dimensions) {
-    // Child width can depend on parent width, so we need to
-    // calculate this box's width before laying out its children.
-    self.calculate_block_width(containing_block);
+        The width calculation is the first step in the block layout function, and also the
+        most complicated. I'll walk through it step by step. To start, we need the values of
+        the CSS width property and all the left and right edge sizes:
+     */
+    fn calculate_block_width(&mut self, containing_block: Dimensions) {
+        let style = self.get_style_node();
 
-    // Determine where the box is located within its container.
-    self.calculate_block_position(containing_block);
+        // `width` has initial value `auto`.
+        let auto = css::Value::Keyword("auto".to_string());
+        let mut width = style.value("width").unwrap_or(auto.clone());
 
-    // Recursively lay out the children of this box.
-    self.layout_block_children();
+        // margin, border, and padding have initial value 0.
+        let zero = css::Value::Length(0.0, css::Unit::Px);
 
-    // Parent height can depend on child height, so `calculate_height`
-    // must be called *after* the children are laid out.
-    self.calculate_block_height();
+        let mut margin_left = style.lookup("margin-left", "margin", &zero);
+        let mut margin_right = style.lookup("margin-right", "margin", &zero);
+
+        let border_left = style.lookup("border-left-width", "border-width", &zero);
+        let border_right = style.lookup("border-right-width", "border-width", &zero);
+
+        let padding_left = style.lookup("padding-left", "padding", &zero);
+        let padding_right = style.lookup("padding-right", "padding", &zero);
+
+        // ...
+    }
 }
