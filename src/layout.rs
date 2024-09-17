@@ -1,59 +1,60 @@
 //! Basic CSS block layout.
 
 use crate::{css, style};
-/*
-    The layout module takes the style tree and translates it into a bunch of rectangles in
-    a two-dimensional space.
 
-    The layout module's input is the style tree, and its output is yet another tree, the
-    "layout tree".
+/**
+ *  the layout module takes the style tree and translates it into a bunch of rectangles in
+ *  a two-dimensional space.
+ *
+ *  the layout module's input is the style tree, and its output is yet another tree, the
+ *  "layout tree".
  */
 
-/*
-    Layout is all about "boxes". A box is a rectangular section of a web page. It has a
-    width, a height, and a position on the page. This rectangle is called the "content area"
-    because it's where the box's content is drawn. The content may be text, image, video,
-    or other boxes.
-
-    A box may also have padding, borders, and margins surrounding its content area. The CSS
-    spec has a [diagram](https://www.w3.org/TR/CSS2/box.html#box-dimensions) showing how
-    all these layers fit together.
-
-    The engine stores a box's content area and surrounding areas in the following structure.
-
-    Rust note: `f32` is a 32-bit floating point type.
+/**
+ *  layout is all about "boxes". a box is a rectangular section of a web page. It has a
+ *  width, a height, and a position on the page. this rectangle is called the "content area"
+ *  because it's where the box's content is drawn. The content may be text, image, video,
+ *  or other boxes.
+ *
+ *  a box may also have padding, borders, and margins surrounding its content area. The CSS
+ *  spec has a [diagram](https://www.w3.org/tr/css2/box.html#box-dimensions) showing how
+ *  all these layers fit together.
+ *
+ *  the engine stores a box's content area and surrounding areas in the following structure.
+ *
+ *  rust note: `f32` is a 32-bit floating point type.
  */
 
-// CSS box model. All sizes are in px.
+// css box model. all sizes are in px.
 
-/// Position of the content area relative to the document origin:
-struct Rect {
+/// position of the content area relative to the document origin:
+struct rect {
     x: f32,
     y: f32,
     width: f32,
     height: f32,
 }
 
-/// Surrounding edges:
-struct EdgeSizes {
+/// surrounding edges:
+struct edgesizes {
     left: f32,
     right: f32,
     top: f32,
     bottom: f32,
 }
 
-struct Dimensions {
-    content: Rect,
-    padding: EdgeSizes,
-    border: EdgeSizes,
-    margin: EdgeSizes,
+struct dimensions {
+    content: rect,
+    padding: edgesizes,
+    border: edgesizes,
+    margin: edgesizes,
 }
 
 
 /*
-    Block and Inline Layout
+    block and inline layout
 
-    The CSS display property determines which type of box an element generates. CSS
+    the css display property determines which type of box an element generates. CSS
     defines several box types, each with its own layout rules. Here only going to talk
     about two of them: "block" and "inline".
 
@@ -93,20 +94,20 @@ pub struct LayoutBox<'a> {
 }
 
 
-/*
-    To build the layout tree, we need to look at the display property for each DOM node.
-    I added some code to the style module to get the display value for a node. If there's
-    no specified value it returns the initial value, "inline".
-
-    see style::Display
-    see style::StyledNode
+/**
+ *  To build the layout tree, we need to look at the display property for each DOM node.
+ *  I added some code to the style module to get the display value for a node. If there's
+ *  no specified value it returns the initial value, "inline".
+ *
+ *  see style::Display
+ *  see style::StyledNode
  */
 
 
-/*
-    Now we can walk through the style tree, build a LayoutBox for each node, and then
-    insert boxes for the node's children. If a node's display property is set to 'none'
-    then it is not included in the layout tree.
+/**
+ *  Now we can walk through the style tree, build a LayoutBox for each node, and then
+ *  insert boxes for the node's children. If a node's display property is set to 'none'
+ *  then it is not included in the layout tree.
  */
 
 /// Build the tree of LayoutBoxes, but don't perform any layout calculations yet.
@@ -162,20 +163,13 @@ impl LayoutBox {
 }
 
 
-/*
-    Traversing the Layout Tree
-
-    The entry point to this code is the layout function, which takes a LayoutBox and
-    calculates its dimensions. We'll break this function into three cases, and implement
-    only one of them for now:
- */
 impl LayoutBox {
-    /*
-        Traversing the Layout Tree
-
-        The entry point to this code is the layout function, which takes a LayoutBox
-        and calculates its dimensions. We’ll break this function into three cases,
-        and implement only one of them for now:
+    /**
+     *  Traversing the Layout Tree
+     *
+     *  The entry point to this code is the layout function, which takes a LayoutBox
+     *  and calculates its dimensions. We’ll break this function into three cases,
+     *  and implement only one of them for now:
      */
     /// Lay out a box and its descendants.
     fn layout(&mut self, containing_block: Dimensions) {
@@ -186,16 +180,16 @@ impl LayoutBox {
         }
     }
 
-    /*
-        A block's layout depends on the dimensions of its "containing block". For block boxes
-        in normal flow, this is just the box's parent. For the root element, it's the size of
-        the browser window (or "viewport").
-
-        You may remember from the previous article that a block's width depends on its parent,
-        while its height depends on its children. This means that our code needs to traverse
-        the tree top-down while calculating widths, so it can lay out the children after their
-        parent's width is known, and traverse bottom-up to calculate heights, so that a parent's
-        height is calculated after its children's.
+    /**
+     *  A block's layout depends on the dimensions of its "containing block". For block boxes
+     *  in normal flow, this is just the box's parent. For the root element, it's the size of
+     *  the browser window (or "viewport").
+     *
+     *  you may remember from the previous article that a block's width depends on its parent,
+     *  while its height depends on its children. This means that our code needs to traverse
+     *  the tree top-down while calculating widths, so it can lay out the children after their
+     *  parent's width is known, and traverse bottom-up to calculate heights, so that a parent's
+     *  height is calculated after its children's.
      */
     fn layout_block(&mut self, containing_block: Dimensions) {
         // Child width can depend on parent width, so we need to
@@ -214,12 +208,12 @@ impl LayoutBox {
     }
 
 
-    /*
-        Calculating the Width
-
-        The width calculation is the first step in the block layout function, and also the
-        most complicated. I'll walk through it step by step. To start, we need the values of
-        the CSS width property and all the left and right edge sizes.
+    /**
+     *  Calculating the Width
+     *
+     *  The width calculation is the first step in the block layout function, and also the
+     *  most complicated. I'll walk through it step by step. To start, we need the values of
+     *  the CSS width property and all the left and right edge sizes.
      */
     fn calculate_block_width(&mut self, containing_block: Dimensions) {
         let style: style::StyledNode = self.get_style_node();
@@ -232,15 +226,15 @@ impl LayoutBox {
         let zero: css::Value = css::Value::Length(0.0, css::Unit::Px);
 
 
-        /*
-            This uses a helper function called style::StyledNode::lookup, which just tries a
-            series of values in sequence. If the first property isn't set, it tries the second
-            one. If that's not set either, it returns the given default value. This provides an
-            incomplete (but simple) implementation of [shorthand properties](https://www.w3.org/TR/CSS2/about.html#shorthand)
-            and initial values.
-
-            Note: This is similar to the following code in, say, JavaScript or Ruby:
-                margin_left = style["margin-left"] || style["margin"] || zero;
+        /**
+         *  This uses a helper function called "style::StyledNode::lookup", which just
+         *  tries a series of values in sequence. If the first property isn't set, it
+         *  tries the second one. If that's not set either, it returns the given default
+         *  value. This provides an incomplete (but simple) implementation of [shorthand properties](https://www.w3.org/TR/CSS2/about.html#shorthand)
+         *  and initial values.
+         *
+         *  Note: This is similar to the following code in, say, JavaScript or Ruby:
+         *    margin_left = style["margin-left"] || style["margin"] || zero;
          */
 
         let mut margin_left: css::Value = style.lookup("margin-left", "margin", &zero);
@@ -251,5 +245,23 @@ impl LayoutBox {
 
         let padding_left: css::Value = style.lookup("padding-left", "padding", &zero);
         let padding_right: css::Value = style.lookup("padding-right", "padding", &zero);
+
+
+        /**
+         *  Since a child can't change its parent's width, it needs to make sure its own
+         *  width fits the parent's. The CSS spec expresses this as a set of [constraints](https://www.w3.org/TR/CSS2/visudet.html#blockwidth)
+         *  and an algorithm for solving them. The following code implements that algorithm.
+         */
+        /*
+           First we add up the margin, padding, border, and content widths.
+           The "css::Value:to_px" helper method converts lengths to their numerical values.
+           If a property is set to "auto", it returns 0 so it doesn't affect the sum.
+         */
+        let total = [
+            &margin_left, &margin_right,
+            &border_left, &border_right,
+            &padding_left, &padding_right,
+            &width
+        ].iter().map(|v: &&css::Value| v.to_px()).sum();
     }
 }
