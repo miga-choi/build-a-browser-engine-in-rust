@@ -260,7 +260,7 @@ impl LayoutBox {
            This is the minimum horizontal space needed for the box. If this isn't equal to
            the container width, we'll need to adjust something to make it equal.
          */
-        let total = [
+        let total: f32 = [
             &margin_left, &margin_right,
             &border_left, &border_right,
             &padding_left, &padding_right,
@@ -282,5 +282,13 @@ impl LayoutBox {
                 margin_right = css::Value::Length(0.0, css::Unit::Px)
             }
         }
+
+        /*
+            If the box is too large for its container, it "overflows" the container.
+            If it's too small, it will "underflow", leaving extra space. We'll calculate
+            the underflow-the amount of extra space left in the container. (If this
+            number is negative, it is actually an overflow.)
+         */
+        let underflow: f32 = containing_block.content.width - total;
     }
 }
