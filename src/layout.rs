@@ -28,7 +28,7 @@ use crate::{css, style};
 // css box model. all sizes are in px.
 
 /// position of the content area relative to the document origin:
-struct rect {
+struct Rect {
     x: f32,
     y: f32,
     width: f32,
@@ -36,18 +36,18 @@ struct rect {
 }
 
 /// surrounding edges:
-struct edgesizes {
+struct EdgeSizes {
     left: f32,
     right: f32,
     top: f32,
     bottom: f32,
 }
 
-struct dimensions {
-    content: rect,
-    padding: edgesizes,
-    border: edgesizes,
-    margin: edgesizes,
+struct Dimensions {
+    content: Rect,
+    padding: EdgeSizes,
+    border: EdgeSizes,
+    margin: EdgeSizes,
 }
 
 
@@ -256,6 +256,9 @@ impl LayoutBox {
            First we add up the margin, padding, border, and content widths.
            The "css::Value:to_px" helper method converts lengths to their numerical values.
            If a property is set to "auto", it returns 0 so it doesn't affect the sum.
+
+           This is the minimum horizontal space needed for the box. If this isn't equal to
+           the container width, we'll need to adjust something to make it equal.
          */
         let total = [
             &margin_left, &margin_right,
@@ -263,5 +266,21 @@ impl LayoutBox {
             &padding_left, &padding_right,
             &width
         ].iter().map(|v: &&css::Value| v.to_px()).sum();
+
+        /*
+            If the  width or margins are set to "auto", they can expand or contract to fit
+            the available space. Following the spec, we first check if the box is too big.
+            If so, we set any expandable margins to zero.
+         */
+        /// If width is not auto and the total is wider than the container,
+        /// treat auto margins as 0.
+        if width != auto && total > containing_block.content.width {
+            if margin_left == auto {
+                margin_left = css::Value::Length(0.0, css::Unit::Px)
+            }
+            if margin_right == auto {
+                margin_right = css::Value::Length(0.0, css::Unit::Px)
+            }
+        }
     }
 }
