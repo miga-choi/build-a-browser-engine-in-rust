@@ -28,6 +28,7 @@ use crate::{css, style};
 // css box model. all sizes are in px.
 
 /// position of the content area relative to the document origin:
+#[derive(Copy)]
 struct Rect {
     x: f32,
     y: f32,
@@ -36,6 +37,7 @@ struct Rect {
 }
 
 /// surrounding edges:
+#[derive(Copy)]
 struct EdgeSizes {
     left: f32,
     right: f32,
@@ -43,6 +45,7 @@ struct EdgeSizes {
     bottom: f32,
 }
 
+#[derive(Copy)]
 struct Dimensions {
     content: Rect,
     padding: EdgeSizes,
@@ -344,8 +347,40 @@ impl LayoutBox {
 
         /**
          *  At this point, the constraints are met and any "auto" values have been
-         *  converted to lengths. The results are the used values for the horizontal
-         *  box dimensions, which we will store in the layout tree.
+         *  converted to lengths. The results are the [used values](https://www.w3.org/TR/CSS2/cascade.html#used-value)
+         *  for the horizontal box dimensions, which we will store in the layout tree.
          */
+    }
+
+    /**
+     *  Positioning
+     *
+     *  This function looks up the remaining margin/padding/border styles, and uses these
+     *  along with the containing block dimensions to determine this block's position on
+     *  the page.
+     */
+    fn calculate_block_position(&mut self, containing_block: Dimensions) {
+        let style: style::StyledNode = self.get_style_node();
+        let d: &mut Dimensions = &mut self.dimensions;
+
+        // margin, border, and padding have initial value 0.
+        let zero: css::Value = css::Value::Length(0.0, css::Unit::Px);
+
+        // If margin-top or margin-bottom is "auto", the used value is zero.
+        d.margin.top = style.lookup("margin-top", "margin", &zero).to_px();
+        d.margin.bottom = style.lookup("margin-bottom", "margin", &zero).to_px();
+
+        d.border.top = style.lookup("border-top-width", "border-width", &zero).to_px();
+        d.border.bottom = style.lookup("border-bottom-width", "border-width", &zero).to_px();
+
+        d.padding.top = style.lookup("padding-top", "padding", &zero).to_px();
+        d.padding.bottom = style.lookup("padding-bottom", "padding", &zero).to_px();
+
+        d.content.x = containing_block.content.x +
+            d.margin.left + d.border.left + d.padding.left;
+
+        // Position the box below all the previous boxes in the container.
+        d.content.y = containing_block.content.height + containing_block.content.y +
+            d.margin.top + d.border.top + d.padding.top;
     }
 }
