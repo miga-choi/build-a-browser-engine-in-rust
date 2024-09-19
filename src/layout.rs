@@ -148,7 +148,7 @@ impl LayoutBox {
     /// Where a new inline child should go.
     fn get_inline_container(&mut self) -> &mut LayoutBox {
         match self.box_type {
-            BoxType::InlineNode(_) | AnonymousBlock => self,
+            BoxType::InlineNode(_) | BoxType::AnonymousBlock => self,
             BoxType::BlockNode(_) => {
                 // If we've just generated an anonymous block box, keep using it.
                 // Otherwise, create a new one.
@@ -252,13 +252,12 @@ impl LayoutBox {
          *  width fits the parent's. The CSS spec expresses this as a set of [constraints](https://www.w3.org/TR/CSS2/visudet.html#blockwidth)
          *  and an algorithm for solving them. The following code implements that algorithm.
          */
+
         /*
            First we add up the margin, padding, border, and content widths.
            The "css::Value:to_px" helper method converts lengths to their numerical values.
            If a property is set to "auto", it returns 0 so it doesn't affect the sum.
 
-           This is the minimum horizontal space needed for the box. If this isn't equal to
-           the container width, we'll need to adjust something to make it equal.
          */
         let total: f32 = [
             &margin_left, &margin_right,
@@ -266,6 +265,11 @@ impl LayoutBox {
             &padding_left, &padding_right,
             &width
         ].iter().map(|v: &&css::Value| v.to_px()).sum();
+
+        /**
+         *  This is the minimum horizontal space needed for the box. If this isn't equal
+         *  to the container width, we'll need to adjust something to make it equal.
+         */
 
         /*
             If the  width or margins are set to "auto", they can expand or contract to fit
@@ -290,5 +294,58 @@ impl LayoutBox {
             number is negative, it is actually an overflow.)
          */
         let underflow: f32 = containing_block.content.width - total;
+
+        /*
+            We now follow the spec's [algorithm](https://www.w3.org/TR/CSS2/visudet.html#blockwidth)
+            for eliminating any overflow or underflow by adjusting the expandable dimensions.
+            If there are no "auto" dimensions, we adjust the right margin. (Yes, this means
+            the margin may be [negative](https://www.smashingmagazine.com/2009/07/the-definitive-guide-to-using-negative-margins/)
+            in the case of an overflow!)
+         */
+        match (width == auto, margin_left == auto, margin_right == auto) {
+            // If the values are overconstrained, calculate margin_right.
+            (false, false, false) => {
+                margin_right = css::Value::Length(margin_right.to_px() + underflow, css::Unit::Px);
+            }
+
+            // If exactly one size is auto, its used value follows from the equality.
+            (false, false, true) => {
+                margin_right = css::Value::Length(underflow, css::Unit::Px);
+            }
+            (false, true, false) => {
+                margin_left = css::Value::Length(underflow, css::Unit::Px);
+            }
+
+            // If width is set to auto, any other auto values become 0.
+            (true, _, _) => {
+                if margin_left == auto {
+                    margin_left = css::Value::Length(0.0, css::Unit::Px);
+                }
+                if margin_right == auto {
+                    margin_right = css::Value::Length(0.0, css::Unit::Px);
+                }
+
+                if underflow >= 0.0 {
+                    // Expand width to fill the underflow.
+                    width = css::Value::Length(underflow, css::Unit::Px);
+                } else {
+                    // Width can't be negative. Adjust the right margin instead.
+                    width = css::Value::Length(0.0, css::Unit::Px);
+                    margin_right = css::Value::Length(margin_right.to_px() + underflow, css::Unit::Px);
+                }
+            }
+
+            // If margin-left and margin-right are both auto, their used values are equal.
+            (false, true, true) => {
+                margin_left = css::Value::Length(underflow / 2.0, css::Unit::Px);
+                margin_right = css::Value::Length(underflow / 2.0, css::Unit::Px);
+            }
+        }
+
+        /**
+         *  At this point, the constraints are met and any "auto" values have been
+         *  converted to lengths. The results are the used values for the horizontal
+         *  box dimensions, which we will store in the layout tree.
+         */
     }
 }
