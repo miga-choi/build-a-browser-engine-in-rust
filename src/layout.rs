@@ -1,5 +1,6 @@
 //! Basic CSS block layout.
 
+use std::thread::sleep;
 use crate::{css, style};
 
 /**
@@ -397,5 +398,26 @@ impl LayoutBox {
             // Increment the height so each child is laid out below the previous one.
             self.dimensions.content.height += child.dimensions.margin_box().height;
         }
+    }
+}
+
+/**
+ *  The total vertical space taken up by each child is the height of its "margin box",
+ *  which we calculate like so:
+ */
+impl Dimensions {
+    // The area covered by the content area plus its padding.
+    fn padding_box(self) -> Rect {
+        self.content.expanded_by(self.padding)
+    }
+
+    // The area covered by the content area plus padding and borders.
+    fn border_box(self) -> Rect {
+        self.padding_box().expanded_by(self.border)
+    }
+
+    // The area covered by the content area plus padding, borders, and margin.
+    fn margin_box(self) -> Rect {
+        self.border_box().expanded_by(self.margin)
     }
 }
