@@ -383,4 +383,19 @@ impl LayoutBox {
         d.content.y = containing_block.content.height + containing_block.content.y +
             d.margin.top + d.border.top + d.padding.top;
     }
+
+    /**
+     *  Children
+     *
+     *  Here's the code that recursively lays out the box's contents. As it loops through
+     *  the child boxes, it keeps track of the total content height. This is used by the
+     *  positioning code (above) to find the vertical position of the next child.
+     */
+    fn layout_block_children(&mut self) {
+        for child in &mut self.children {
+            child.layout(self.dimensions);
+            // Increment the height so each child is laid out below the previous one.
+            self.dimensions.content.height += child.dimensions.margin_box().height;
+        }
+    }
 }
