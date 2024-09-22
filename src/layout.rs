@@ -1,6 +1,5 @@
 //! Basic CSS block layout.
 
-use std::thread::sleep;
 use crate::{css, style};
 
 /**
@@ -135,6 +134,7 @@ fn build_layout_tree<'a>(style_node: &'a style::StyledNode<'a>) -> LayoutBox<'a>
     root
 }
 
+
 impl LayoutBox {
     fn new(box_type: BoxType) -> LayoutBox {
         LayoutBox {
@@ -164,10 +164,7 @@ impl LayoutBox {
             }
         }
     }
-}
 
-
-impl LayoutBox {
     /**
      *  Traversing the Layout Tree
      *
@@ -353,6 +350,7 @@ impl LayoutBox {
          */
     }
 
+
     /**
      *  Positioning
      *
@@ -385,6 +383,7 @@ impl LayoutBox {
             d.margin.top + d.border.top + d.padding.top;
     }
 
+
     /**
      *  Children
      *
@@ -399,12 +398,28 @@ impl LayoutBox {
             self.dimensions.content.height += child.dimensions.margin_box().height;
         }
     }
+
+    /**
+     *  The "height" Property
+     *
+     *  By default, the box's height is equal to the height of its contents. But if
+     *  the "height" property is set to an explicit length, we'll use that instead:
+     */
+    fn calculate_block_height(&mut self) {
+        /// If the height is set to an explicit length, use that exact length.
+        /// Otherwise, just keep the value set by `layout_block_children`.
+        if let Some(css::Value::Length(h, css::Unit::Px)) = self.get_style_node().value("height") {
+            self.dimensions.content.height = h;
+        }
+    }
 }
+
 
 /**
  *  The total vertical space taken up by each child is the height of its "margin box",
  *  which we calculate like so:
  */
+
 impl Dimensions {
     // The area covered by the content area plus its padding.
     fn padding_box(self) -> Rect {
@@ -419,5 +434,16 @@ impl Dimensions {
     // The area covered by the content area plus padding, borders, and margin.
     fn margin_box(self) -> Rect {
         self.border_box().expanded_by(self.margin)
+    }
+}
+
+impl Rect {
+    fn expanded_by(self, edge: EdgeSizes) -> Rect {
+        Rect {
+            x: self.x - edge.left,
+            y: self.y - edge.top,
+            width: self.width + edge.left + edge.right,
+            height: self.height + edge.top + edge.bottom,
+        }
     }
 }
