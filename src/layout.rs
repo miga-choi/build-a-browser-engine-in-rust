@@ -29,7 +29,7 @@ use crate::{css, style};
 
 /// position of the content area relative to the document origin:
 #[derive(Copy)]
-pub struct Rect {
+struct Rect {
     x: f32,
     y: f32,
     width: f32,
@@ -112,6 +112,22 @@ pub struct LayoutBox<'a> {
  *  insert boxes for the node's children. If a node's display property is set to 'none'
  *  then it is not included in the layout tree.
  */
+impl<'a> LayoutBox<'a> {
+    fn new(box_type: BoxType) -> LayoutBox {
+        LayoutBox {
+            box_type,
+            dimensions: Default::default(), // initially set all fields to 0.0
+            children: Vec::new(),
+        }
+    }
+
+    fn get_style_node(&self) -> &'a style::StyledNode<'a> {
+        match self.box_type {
+            BoxType::BlockNode(node) | BoxType::InlineNode(node) => node,
+            BoxType::AnonymousBlock => panic!("Anonymous block box has no style node")
+        }
+    }
+}
 
 /// Build the tree of LayoutBoxes, but don't perform any layout calculations yet.
 fn build_layout_tree<'a>(style_node: &'a style::StyledNode<'a>) -> LayoutBox<'a> {
@@ -135,15 +151,7 @@ fn build_layout_tree<'a>(style_node: &'a style::StyledNode<'a>) -> LayoutBox<'a>
 }
 
 
-impl LayoutBox {
-    fn new(box_type: BoxType) -> LayoutBox {
-        LayoutBox {
-            box_type,
-            dimensions: Default::default(), // initially set all fields to 0.0
-            children: Vec::new(),
-        }
-    }
-
+impl LayoutBox<'_> {
     /*
         If a block node contains an inline child, create an anonymous block box to
         contain it. If there are several inline children in a row, put them all in
@@ -217,7 +225,7 @@ impl LayoutBox {
      *  the CSS width property and all the left and right edge sizes.
      */
     fn calculate_block_width(&mut self, containing_block: Dimensions) {
-        let style: style::StyledNode = self.get_style_node();
+        let style: &style::StyledNode = self.get_style_node();
 
         // `width` has initial value `auto`.
         let auto: css::Value = css::Value::Keyword("auto".to_string());
@@ -359,7 +367,7 @@ impl LayoutBox {
      *  the page.
      */
     fn calculate_block_position(&mut self, containing_block: Dimensions) {
-        let style: style::StyledNode = self.get_style_node();
+        let style: &style::StyledNode = self.get_style_node();
         let d: &mut Dimensions = &mut self.dimensions;
 
         // margin, border, and padding have initial value 0.
