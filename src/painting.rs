@@ -43,3 +43,27 @@ type DisplayList = Vec<DisplayCommand>;
 enum DisplayCommand {
     SolidColor(css::Color, layout::Rect)
 }
+
+
+/**
+ *  To build the display list, we walk through the layout tree and generate a series of
+ *  commands for each box. First we draw the box's background, then we draw its borders
+ *  and content on top of the background.
+ */
+
+fn build_display_list(layout_root: &layout::LayoutBox) -> DisplayList {
+    let mut list: Vec<DisplayCommand> = Vec::new();
+    render_layout_box(&mut list, layout_root);
+    list
+}
+
+fn render_layout_box(list: &mut DisplayList, layout_box: &layout::LayoutBox) {
+    render_background(list, layout_box);
+    render_borders(list, layout_box);
+
+    // TODO: render text
+
+    for child in &layout_box.children {
+        render_layout_box(list, child);
+    }
+}
