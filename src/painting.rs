@@ -100,3 +100,50 @@ fn get_color(layout_box: &layout::LayoutBox, name: &str) -> Option<css::Color> {
         layout::BoxType::AnonymousBlock => None,
     }
 }
+
+
+/**
+ *  The borders are similar, but instead of a single rectangle we draw four-one for
+ *  each edge of the box.
+ */
+fn render_borders(list: &mut DisplayList, layout_box: &layout::LayoutBox) {
+    let color: css::Color = match get_color(layout_box, "border-color") {
+        Some(color) => color,
+        _ => return, // bail out if no border-color is specified
+    };
+
+    let d: &layout::Dimensions = &layout_box.dimensions;
+    let border_box: layout::Rect = d.border_box();
+
+    // Top border
+    list.push(DisplayCommand::SolidColor(color, layout::Rect {
+        x: border_box.x,
+        y: border_box.y,
+        width: border_box.width,
+        height: d.border.top,
+    }));
+
+    // Right border
+    list.push(DisplayCommand::SolidColor(color, layout::Rect {
+        x: border_box.x + border_box.width - d.border.right,
+        y: border_box.y,
+        width: d.border.left,
+        height: border_box.height,
+    }));
+
+    // Bottom border
+    list.push(DisplayCommand::SolidColor(color, layout::Rect {
+        x: border_box.x,
+        y: border_box.y + border_box.height - d.border.bottom,
+        width: border_box.width,
+        height: d.border.bottom,
+    }));
+
+    // Left border
+    list.push(DisplayCommand::SolidColor(color, layout::Rect {
+        x: border_box.x,
+        y: border_box.y,
+        width: d.border.left,
+        height: border_box.height,
+    }));
+}

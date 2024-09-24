@@ -106,7 +106,7 @@ pub enum Unit {
 
     Rust note: u8 is an 8-bit unsigned integer, and f32 is a 32-bit float.
  */
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Color {
     pub r: u8,
     pub g: u8,

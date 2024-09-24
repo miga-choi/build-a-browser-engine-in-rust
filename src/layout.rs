@@ -30,27 +30,27 @@ use crate::{css, style};
 /// position of the content area relative to the document origin:
 #[derive(Copy)]
 pub struct Rect {
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
 }
 
 /// surrounding edges:
 #[derive(Copy)]
-struct EdgeSizes {
-    left: f32,
-    right: f32,
-    top: f32,
-    bottom: f32,
+pub struct EdgeSizes {
+    pub left: f32,
+    pub right: f32,
+    pub top: f32,
+    pub bottom: f32,
 }
 
 #[derive(Copy)]
-struct Dimensions {
-    content: Rect,
-    padding: EdgeSizes,
-    border: EdgeSizes,
-    margin: EdgeSizes,
+pub struct Dimensions {
+    pub content: Rect,
+    pub padding: EdgeSizes,
+    pub border: EdgeSizes,
+    pub margin: EdgeSizes,
 }
 
 
