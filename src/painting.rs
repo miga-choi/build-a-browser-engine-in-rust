@@ -67,3 +67,36 @@ fn render_layout_box(list: &mut DisplayList, layout_box: &layout::LayoutBox) {
         render_layout_box(list, child);
     }
 }
+
+
+/**
+ *  By default, HTML elements are stacked in the order they appear: If two elements overlap,
+ *  the later one is drawn on top of the earlier one. This is reflected in our display list,
+ *  which will draw the elements in the same order they appear in the DOM tree. If this code
+ *  supported the [z-index](https://www.w3.org/TR/CSS2/visuren.html#z-index) property, then
+ *  individual elements would be able to override this stacking order, and we'd need to sort
+ *  the display list accordingly.
+ *
+ *  The background is easy. It's just solid rectangle. If no background color is specified,
+ *  then the background is transparent and we don't need to generate a display command.
+ */
+
+fn render_background(list: &mut DisplayList, layout_box: &layout::LayoutBox) {
+    get_color(layout_box, "background")
+        .map(
+            |color: css::Color| list.push(
+                DisplayCommand::SolidColor(color, layout_box.dimensions.border_box())
+            )
+        );
+}
+
+/// Return the specified color for CSS property `name`, or None if no color was specified.
+fn get_color(layout_box: &layout::LayoutBox, name: &str) -> Option<css::Color> {
+    match layout_box.box_type {
+        layout::BoxType::BlockNode(style) | layout::BoxType::InlineNode(style) => match style.value(name) {
+            Some(css::Value::ColorValue(color)) => Some(color),
+            _ => None,
+        },
+        layout::BoxType::AnonymousBlock => None,
+    }
+}

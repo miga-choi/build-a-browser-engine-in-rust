@@ -76,7 +76,7 @@ struct Dimensions {
     need to change when I implement text layout, because line wrapping can cause a
     single inline node to split into multiple boxes. But it will do for now.)
  */
-enum BoxType<'a> {
+pub enum BoxType<'a> {
     BlockNode(&'a style::StyledNode<'a>),
     InlineNode(&'a style::StyledNode<'a>),
     AnonymousBlock,
@@ -435,7 +435,7 @@ impl Dimensions {
     }
 
     // The area covered by the content area plus padding and borders.
-    fn border_box(self) -> Rect {
+    pub fn border_box(self) -> Rect {
         self.padding_box().expanded_by(self.border)
     }
 
