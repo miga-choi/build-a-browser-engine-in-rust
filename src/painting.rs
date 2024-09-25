@@ -147,3 +147,16 @@ fn render_borders(list: &mut DisplayList, layout_box: &layout::LayoutBox) {
         height: border_box.height,
     }));
 }
+
+
+/**
+ *  Rasterization
+ *
+ *  Now that we've built the display list, we need to turn it into pixels by executing
+ *  each DisplayCommand. We'll store the pixels in a Canvas:
+ */
+struct Canvas {
+    pixels: Vec<css::Color>,
+    width: usize,
+    height: usize,
+}
