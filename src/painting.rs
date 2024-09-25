@@ -160,3 +160,15 @@ struct Canvas {
     width: usize,
     height: usize,
 }
+
+impl Canvas {
+    // Create a blank canvas
+    fn new(width: usize, height: usize) -> Canvas {
+        let white = css::Color { r: 255, g: 255, b: 255, a: 255 };
+        Canvas {
+            pixels: vec![white; width * height],
+            width,
+            height,
+        }
+    }
+}
