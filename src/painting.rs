@@ -162,13 +162,37 @@ struct Canvas {
 }
 
 impl Canvas {
-    // Create a blank canvas
+    /// Create a blank canvas
     fn new(width: usize, height: usize) -> Canvas {
         let white = css::Color { r: 255, g: 255, b: 255, a: 255 };
         Canvas {
             pixels: vec![white; width * height],
             width,
             height,
+        }
+    }
+
+    /**
+     *  To paint a rectangle on the canvas, we just loop through its rows and columns,
+     *  using a [helper method](https://doc.rust-lang.org/std/primitive.f32.html#method.clamp)
+     *  to make sure we don't go outside the bounds of our canvas.
+     */
+    fn paint_item(&mut self, item: &DisplayCommand) {
+        match item {
+            &DisplayCommand::SolidColor(color, rect) => {
+                /// Clip the rectangle to the canvas boundaries.
+                let x0: usize = rect.x.clamp(0.0, self.width as f32) as usize;
+                let y0: usize = rect.y.clamp(0.0, self.height as f32) as usize;
+                let x1: usize = (rect.x + rect.width).clamp(0.0, self.width as f32) as usize;
+                let y1: usize = (rect.y + rect.height).clamp(0.0, self.height as f32) as usize;
+
+                for y in (y0..y1) {
+                    for x in (x0..x1) {
+                        // TODO: alpha compositing with existing pixel
+                        self.pixels[x + y * self.width] = color;
+                    }
+                }
+            }
         }
     }
 }
