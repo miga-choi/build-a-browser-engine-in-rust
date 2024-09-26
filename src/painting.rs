@@ -176,6 +176,11 @@ impl Canvas {
      *  To paint a rectangle on the canvas, we just loop through its rows and columns,
      *  using a [helper method](https://doc.rust-lang.org/std/primitive.f32.html#method.clamp)
      *  to make sure we don't go outside the bounds of our canvas.
+     *
+     *  Note that this code only works with opaque colors. If we added transparency (by
+     *  reading the opacity property, or adding support for `rgba()` values in the CSS
+     *  parser) then it would need to [blend](https://en.wikipedia.org/wiki/Alpha_compositing)
+     *  each new pixel with whatever it's drawn on top of.
      */
     fn paint_item(&mut self, item: &DisplayCommand) {
         match item {
@@ -195,4 +200,18 @@ impl Canvas {
             }
         }
     }
+}
+
+/**
+ *  Now we can put everything together in the `paint` function, which builds a display
+ *  list and then rasterizes it to a canvas:
+ */
+/// Paint a tree of LayoutBoxes to an array of pixels.
+fn paint(layout_root: &layout::LayoutBox, bounds: layout::Rect) -> Canvas {
+    let display_list = build_display_list(layout_root);
+    let mut canvas = Canvas::new(bounds.width as usize, bounds.height as usize);
+    for item in display_list {
+        canvas.paint_item(&item);
+    }
+    canvas
 }
